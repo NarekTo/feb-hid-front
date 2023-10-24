@@ -1,6 +1,7 @@
 "use client";
-import { Session } from "@/app/types";
+
 import { signIn, signOut, useSession } from "next-auth/react";
+import { Session } from "../../../types";
 
 
 const LoginInfo = () => {
