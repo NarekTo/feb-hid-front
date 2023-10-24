@@ -1,10 +1,11 @@
 "use client";
-import { Session } from "@/app/types";
+
 import { signIn, signOut, useSession } from "next-auth/react";
+import { Session } from "../../../types";
 
 
 const LoginInfo = () => {
-    const { data: session } = useSession();
+  const { data: session } = useSession() as { data: Session | null };
   const sessionData = session as Session;
   return (
     <div className="ml-auto flex  items-center gap-2 justify-center h-full">
