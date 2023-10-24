@@ -3,25 +3,46 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --dark-blue: #144265;
+  --light-blue: #27a3f6;
+  --primary-button: #4472c4;
+  --secondary-button: #4f85e1;
+  --terciary-button: #ffffff;
+
+  --primary-table: #b4c6e7;
+  --secondary-table: #d9e1f2;
+  --secondary-font: #8ba0da;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
+/* base styles */
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: #ffffff;
+  @apply text-dark-blue ;
 }
+h1,
+h2 {
+  @apply font-bold text-dark-blue text-lg;
+}
+main {
+  @apply w-full ;
+}
+
+
+nav {
+  @apply p-4
+    flex items-center justify-between  
+    w-full;
+}
+
+.error {
+  @apply border-2 
+    border-red-500 
+    bg-red-300
+    text-red-800 
+    py-1 px-2 
+    rounded-sm
+    block
+    max-w-fit
+    my-4 mx-auto;
+}
+
