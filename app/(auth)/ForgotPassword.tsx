@@ -63,14 +63,14 @@ export default function ForgotPassword() {
 
         {error && <p>{error}</p>}
         {message && (
-          <p className="text-sm mt-2 text-slate-400">
-            {message &&
-              message.split('.').map((sentence, index) => (
-                sentence.trim() !== '' && <p key={index} className="text-sm">{sentence.trim()}.</p>
-              ))
-            }
-          </p>
-        )}
+  <>
+    {message &&
+      message.split('.').map((sentence, index) => (
+        sentence.trim() !== '' && <p key={index} className="text-sm mt-2 text-slate-400">{sentence.trim()}.</p>
+      ))
+    }
+  </>
+)}
       </form>
     </div>
   );

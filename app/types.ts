@@ -2,23 +2,32 @@ import { ReactNode } from "react";
 
 export interface User {
     name: string;
+    email: string;
   }
   
   export interface Session {
+    id: string; 
+    user_id: string;
     user?: User;
     department_code?: string;
     accessToken: string;
+    app_privileges?: string;
   }
 
   export interface RootLayoutProps {
     children: ReactNode
   }
 
+  export interface Response {
+    userProjects: ProjectProjects[];
+    projects: ProjectProjects[];
+  }
+
 
 
   //SQL TABLES
 
-  interface ProjectBatches {
+  export interface ProjectBatches {
     job_id: string;
     batch_number: string;
     batch_name: string;
@@ -27,7 +36,7 @@ export interface User {
     user_id: string;
   }
   
-  interface ProjectItems {
+  export interface ProjectItems {
     Item_id: string;
     job_id: string;
     batch_number: string;
@@ -81,7 +90,7 @@ export interface User {
     modified_date?: Date;
   }
   
-  interface ProjectProjects {
+  export interface ProjectProjects {
     job_id: number;
     project_number: string;
     project_name: string;
@@ -97,7 +106,7 @@ export interface User {
     status_code?: string;
   }
   
-  interface PasswordReset {
+  export interface PasswordReset {
     id: number;
     email?: string;
     token?: string;
@@ -105,13 +114,13 @@ export interface User {
     user_id?: string;
   }
 
-  interface ProjectAuthorisations {
+  export interface ProjectAuthorisations {
     job_id: number;
     user_id: string;
     authorisation?: string;
   }
 
-  interface LookupStatusCodes {
+  export interface LookupStatusCodes {
     status_code: string;
     status_description?: string;
     table_name?: string;
@@ -119,7 +128,7 @@ export interface User {
     short_description?: string;
   }
 
-  interface AdminUsers {
+  export interface AdminUsers {
     user_id: string;
     username: string;
     employment_status: string;

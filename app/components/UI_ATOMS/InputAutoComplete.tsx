@@ -3,11 +3,8 @@ import { FC, Fragment, useState, ChangeEvent } from "react";
 import { Combobox, Transition } from "@headlessui/react";
 import { TiArrowUnsorted } from "react-icons/ti";
 import { TbCheck } from "react-icons/tb";
+import { ProjectProjects as ProjectItem } from '../../types';
 
-interface ProjectItem {
-  project_name: string;
-  project_number: string;
-}
 
 interface InputAutoCompleteProps {
     list: ProjectItem[];

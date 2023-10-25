@@ -3,7 +3,7 @@ import React, { FC, MouseEvent, ButtonHTMLAttributes } from "react";
 
 interface MainButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   title: string;
-  fun: (e: MouseEvent<HTMLButtonElement>) => void;
+  fun?: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
 const MainButton: FC<MainButtonProps> = ({ title, fun, ...props }) => {
