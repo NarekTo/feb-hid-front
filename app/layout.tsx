@@ -4,6 +4,7 @@ import Navbar from "./components/UI_SECTIONS/header/Navbar";
 import "./globals.css";
 import { Rubik } from "next/font/google";
 import { RootLayoutProps } from "./types";
+import Login from "./(auth)/login/page";
 
 const rubik = Rubik({ subsets: ["latin"] });
 
@@ -20,6 +21,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
       <Providers>
         <body className={`${rubik.className} w-full h-screen flex flex-col`}>
         <Navbar />
+        <Login />
           <main className="flex-grow">
             {children}
           </main>
