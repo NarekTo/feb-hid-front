@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Dispatch, SetStateAction } from "react";
 
+//----------------------------------- general types
 export interface User {
   name: string;
   email: string;
@@ -24,6 +25,7 @@ export interface Response {
   projects: ProjectProjects[];
 }
 
+//----------------------------------- items pages types
 export interface SearchParams {
   job_id: string;
   project_name: string;
@@ -57,7 +59,7 @@ export interface itemInfoType {
   projectDimensions: ProjectItemDimensions;
 }
 
-//------------------------------------SQL TABLES
+//------------------------------------SQL TABLES TYPES
 export interface ProjectItemSpecs {
   item_id: string;
   finish_code?: string;
