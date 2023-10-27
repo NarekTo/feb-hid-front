@@ -21,8 +21,6 @@ const ProjectsList: React.FC<ProjectsListProps> = ({ allProjects }) => {
 
   const handleBatchClick = (project: Project) => {
     window.open(`/items/batches?job_id=${project.job_id}&project_name=${project.project_name.replace(/ /g, '_')}`, '_blank');
-   
-
   };
 
 

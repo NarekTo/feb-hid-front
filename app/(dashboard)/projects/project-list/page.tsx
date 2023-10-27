@@ -9,7 +9,7 @@ import { Session } from '../../../types';
 
 
 async function getData(): Promise<Response> {
-  const session = await getServerSession(options) as Session;;
+  const session = await getServerSession(options) as Session;
   const userId = session.user_id;
   const res = await fetch(`http://localhost:3000/projects/user-projects/${userId}`, {
     headers: {
@@ -30,7 +30,7 @@ async function getData(): Promise<Response> {
 
 const Projects: FC = async () => {
     const projects= await getData() 
-  console.log("projects", projects)
+
 
   return (
     <div className="flex flex-col m-2 ">
