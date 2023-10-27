@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { ProjectProjects } from '../types';
 
 export const extractingRoute = (path: string): string => {
   const parts = path.split("/");
@@ -23,3 +24,8 @@ export function formatDate(date: Date | number, formatString = 'yyyy-MM-dd'): st
   return format(date, formatString);
 }
 
+
+
+export const filterActiveProjects = (projects: ProjectProjects[]) => {
+  return projects.filter(project => project.status_code === 'JA');
+};

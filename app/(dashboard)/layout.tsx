@@ -1,7 +1,7 @@
 "use client"
 import { FC, ReactNode, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/router";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Loading from "./loading";
 import { menuItemsFiltered } from "../utils/menuItems";
 import { useStore } from "../store/store";
@@ -14,11 +14,13 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const loading = status === "loading";
-  const isBatchesPage = /\/items\/batches\/\d+/.test(router.pathname);
-  const job_id = router.query.job_id as string;
-  const project = router.query.project_name as string;
+  const isBatchesPage = /\/items\/batches\/\d+/.test(pathname);
+  const job_id = searchParams.get('job_id') as string
+  const project = searchParams.get('project_name') as string
   const { setJobId, setProjectName, jobId, projectName } = useStore();
 
   useEffect(() => {

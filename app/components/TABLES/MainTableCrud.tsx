@@ -4,16 +4,11 @@ import { useEffect, useState, KeyboardEvent, FC } from "react";
 import { useSession } from "next-auth/react";
 import io from 'socket.io-client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Session } from "../../types";
+import { Session, MainTableCrudProps } from "../../types";
 
 
-interface TableCrudProps<T> {
-    tableItems: T[];
-    batchNum: string;
-    project: string;
-  }
 
-const TableCrud: FC<TableCrudProps<any>> = ({ tableItems, batchNum, project }) => {
+const MainTableCrud: FC<MainTableCrudProps> = ({ tableItems, batchNum, project }) => {
   const searchParams = useSearchParams();
   const { data: session } = useSession() as { data: Session | null };
  
@@ -151,4 +146,4 @@ if (nextCell instanceof HTMLElement) {
       );
     };
   
-  export default TableCrud;
+  export default MainTableCrud;

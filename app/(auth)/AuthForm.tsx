@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, FormEvent } from "react";
 import MainButton from "../components/UI_ATOMS/MainButton";
 import MainInput from "../components/UI_ATOMS/MainInput";
 
@@ -32,7 +32,7 @@ export default function AuthForm({ handleSubmit }: AuthFormProps) {
           style={{ marginTop: "10px" }}
         />
 
-        {/* <MainButton style={{ marginTop: "20px", backgroundColor: "#144265" }} type="submit" title="Login" /> */}
+         <MainButton style={{ marginTop: "20px", backgroundColor: "#144265" }} type="submit" title="Login" /> 
       </form>
     </div>
   );
