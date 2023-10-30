@@ -29,7 +29,7 @@ const getData = async (params: SingleItemParam["params"]) => {
   return res.json();
 };
 
-const Item: React.FC<SingleItemParam> = async ({ params }) => {
+const Item: React.FC<SingleItemParam> = async ({ params }: SingleItemParam) => {
   const singleItem = await getData(params);
   console.log("params", params.item);
 

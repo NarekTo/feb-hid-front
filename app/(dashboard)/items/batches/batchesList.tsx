@@ -5,7 +5,11 @@ import MainTable from "../../../components/TABLES/MainTable";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import TitleHeader from "../../../components/UI_SECTIONS/page/TitleHeader";
-import { ProjectBatches, BatchesListProps } from "../../../types";
+import { ProjectBatches } from "../../../types";
+
+export interface BatchesListProps {
+  projects: ProjectBatches[];
+}
 
 const BatchesList: FC<BatchesListProps> = ({ projects }) => {
   const searchParams = useSearchParams();

@@ -3,9 +3,12 @@
 import { useParams, useSearchParams } from "next/navigation";
 import { FC, useEffect, useState } from "react";
 import TitleHeader from "../../../../../components/UI_SECTIONS/page/TitleHeader";
-import { itemInfoType, SingleItemProps } from "../../../../../types";
+import { itemInfoType } from "../../../../../types";
 
-const SingleItem: FC<SingleItemProps> = ({ item }) => {
+export interface SingleItemProps {
+  item: itemInfoType;
+}
+const SingleItem: FC<SingleItemProps> = ({ item }: SingleItemProps) => {
   const searchParams = useSearchParams();
   const name = searchParams.get("project_name");
   const params = useParams();
@@ -16,6 +19,7 @@ const SingleItem: FC<SingleItemProps> = ({ item }) => {
     projectCompositions,
     projectDimensions,
   } = itemInfo;
+
   useEffect(() => {
     setItemInfo(item);
   }, []);

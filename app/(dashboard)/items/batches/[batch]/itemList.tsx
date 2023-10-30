@@ -1,12 +1,15 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from "react";
 import MainTableCrud from "../../../../components/TABLES/MainTableCrud";
 import { useSearchParams } from "next/navigation";
 import TitleHeader from "../../../../components/UI_SECTIONS/page/TitleHeader";
 import Message from "../../../../components/UI_ATOMS/Message";
-import { ItemsProps, ProjectItems } from "../../../../types";
+import { ProjectItems } from "../../../../types";
 
-
+export interface ItemsProps {
+  items: ProjectItems[];
+  batchNum: string;
+}
 
 const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
   const searchParams = useSearchParams();
@@ -37,10 +40,7 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
           batchNum={batchNum}
         />
       ) : (
-        <Message
-          title="No Items"
-          message="There are no items in this batch"
-        />
+        <Message title="No Items" message="There are no items in this batch" />
       )}
     </div>
   );

@@ -30,20 +30,9 @@ export interface SearchParams {
   job_id: string;
   project_name: string;
 }
-export interface BatchesListProps {
-  projects: ProjectBatches[];
-}
-
-export interface ItemsProps {
-  items: ProjectItems[];
-  batchNum: string;
-}
 
 export interface ItemsParams {
   batch: string;
-}
-export interface SingleItemProps {
-  item: itemInfoType;
 }
 
 export interface MainTableCrudProps {
