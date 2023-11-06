@@ -35,8 +35,9 @@ import {
 import { MdDelete, MdAdd, MdArrowOutward } from "react-icons/md";
 import { HiOutlineDuplicate } from "react-icons/hi";
 import { BiExport, BiHide } from "react-icons/bi";
-import { Filter } from "./components/items_table_comps";
+import { Filter, IndeterminateCheckbox } from "./components/items_table_comps";
 
+//------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
 }
@@ -47,9 +48,34 @@ type useReactTable = <TData extends ProjectItems>(
   options: TableOptions<TData>
 ) => Table<TData>;
 
+//------------------------------------MAIN COMPONENT
 export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
   const columns: ColumnDef<ProjectItems>[] = useMemo(
     () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <IndeterminateCheckbox
+            {...{
+              checked: table.getIsAllRowsSelected(),
+              indeterminate: table.getIsSomeRowsSelected(),
+              onChange: table.getToggleAllRowsSelectedHandler(),
+            }}
+          />
+        ),
+        cell: ({ row }) => (
+          <div className="items-center flex">
+            <IndeterminateCheckbox
+              {...{
+                checked: row.getIsSelected(),
+                disabled: !row.getCanSelect(),
+                indeterminate: row.getIsSomeSelected(),
+                onChange: row.getToggleSelectedHandler(),
+              }}
+            />
+          </div>
+        ),
+      },
       {
         id: "Item_id",
         header: "Item id",
@@ -359,18 +385,19 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
     ],
     []
   );
+
+  //------------------------------------zustand store
   const rerender = useReducer(() => ({}), {})[1];
   const selectedRow = useOptionStore((state) => state.selectedRow);
   const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
-
   const groupNumber = useOptionStore((state) => state.groupNumber);
   const setGroupNumber = useOptionStore((state) => state.setGroupNumber);
-
   const groupSequence = useOptionStore((state) => state.groupSequence);
   const setGroupSequence = useOptionStore((state) => state.setGroupSequence);
-
   const primaryRow = useOptionStore((state) => state.primaryRow);
-  const setPrimaryRow = useOptionStore((state) => state.setPrimaryRow); // Recoil state for storing the primary row
+  const setPrimaryRow = useOptionStore((state) => state.setPrimaryRow);
+
+  //------------------------------------state
   const [primaryRows, setPrimaryRows] = useState([]);
   const [rowSelection, setRowSelection] = useState({});
   const [sorting, setSorting] = useState([]);
@@ -380,7 +407,15 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
   const [tableData, setTableData] = useState(useMemo(() => data, []));
   const [openingMenu, setOpeningMenu] = useState(false);
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
+  const [clicked, setClicked] = useState(false);
+  const [points, setPoints] = useState({
+    x: 0,
+    y: 0,
+  });
+  const tableRef = useRef(null);
+  const virtualRef = useRef(null);
 
+  //----------------------------------------TABLE
   const table = useReactTable({
     data: tableData,
     columns,
@@ -429,11 +464,8 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
     // debugTable: true,
   });
 
-  const tableRef = useRef(null);
-  const virtualRef = useRef(null);
-
+  //----------------------------------------functions
   const handleOpening = () => {
-    console.log("clicking");
     setOpeningMenu(!openingMenu);
   };
 
@@ -555,6 +587,8 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
     setGroupNumber(row.original.group_number);
     const highestGroupSeq = getHighestGroupSeq(data, row.original.group_number);
   };
+
+  //----------------------------------------useEffects
   useEffect(() => {
     const columnFilters = table.getState().columnFilters;
     // Iterate over each column filter
@@ -572,24 +606,17 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
     });
   }, [table.getState().columnFilters]);
 
-  const [clicked, setClicked] = useState(false);
-  const [points, setPoints] = useState({
-    x: 0,
-    y: 0,
-  });
   useEffect(() => {
     const handleClick = () => setClicked(false);
     // Handle outside click
-    const handleOutsideClick = (event) => {
+    const handleOutsideClick = (event: MouseEvent) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
         setSelectedRow(null);
       }
     };
-
     // Add event listeners
     document.addEventListener("click", handleOutsideClick);
     window.addEventListener("click", handleClick);
-
     // Cleanup function
     return () => {
       document.removeEventListener("click", handleOutsideClick);

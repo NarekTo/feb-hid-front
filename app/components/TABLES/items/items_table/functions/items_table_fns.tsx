@@ -1,6 +1,13 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { ProjectItems } from "../../../../../types";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
+import { ColumnDef } from "@tanstack/react-table";
 
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
@@ -76,6 +83,25 @@ export const customCellRenderer = ({
       readOnly={!isEditable}
     />
   );
+};
+
+// `columnList` is a function component that renders a list of columns.
+export const columnList = (currTable) => {
+  return currTable.getAllLeafColumns().map((column: Column) => {
+    console.log("column", column.getIsVisible);
+    return (
+      <div key={column.id} className="px-1">
+        <label>
+          <input
+            type="checkbox"
+            checked={column.getIsVisible()}
+            onChange={column.getToggleVisibilityHandler()}
+          />
+          {column.id}
+        </label>
+      </div>
+    );
+  });
 };
 
 // `columnBeingDragged` is a variable that holds the index of the column being dragged.
