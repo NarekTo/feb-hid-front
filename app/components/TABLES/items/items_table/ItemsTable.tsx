@@ -12,6 +12,7 @@ import {
   TableOptions,
   Table,
   Column,
+  SortingState,
 } from "@tanstack/react-table";
 import {
   ContextMenu,
@@ -400,7 +401,7 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
   //------------------------------------state
   const [primaryRows, setPrimaryRows] = useState([]);
   const [rowSelection, setRowSelection] = useState({});
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [filtering, setFiltering] = useState("");
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -720,6 +721,7 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
                     draggable={
                       !table.getState().columnSizingInfo.isResizingColumn
                     }
+                    onClick={header.column.getToggleSortingHandler()} // Add sorting handler here
                     data-column-index={header.index}
                     onDragStart={onDragStart}
                     onDragOver={(e) => {
@@ -740,13 +742,17 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
                     ) : header.isPlaceholder ? null : (
                       <div
                         className="flex items-center "
-                        onClick={header.column.getToggleSortingHandler()}
+                        onClick={header.column.getToggleSortingHandler} // Add sorting handler here
                       >
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
                         )}
-                        {header.column.getIsSorted() ? up : down}
+                        {header.column.getIsSorted()
+                          ? header.column.getIsSorted() === "asc"
+                            ? up
+                            : down
+                          : null}{" "}
                       </div>
                     )}
                   </th>
