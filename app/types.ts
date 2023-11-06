@@ -188,3 +188,34 @@ export interface AdminUsers {
   app_password: string;
   app_privileges?: string;
 }
+
+//items table
+export interface Row {
+  select: boolean;
+  itemId: string;
+  groupNum: string;
+  groupSeq: string;
+  image: string;
+  location: string;
+  price: string;
+  size: string;
+  ordered: string;
+  description: string;
+  "item ref": string;
+  qty: string;
+  "budget cur": string;
+  "act rate": string;
+  batch: string;
+  "part n": string;
+  supplier: string;
+  manifacturer: string;
+  uom: string;
+  coo: string;
+  "del address": string;
+  "supplier address": string;
+  "fabric res": string;
+  "fabric date": string;
+  "sample inspection": string;
+  "shop drowing": string;
+  lifeCycle: string;
+}

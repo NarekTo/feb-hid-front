@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import TitleHeader from "../../../../components/UI_SECTIONS/page/TitleHeader";
 import Message from "../../../../components/UI_ATOMS/Message";
 import { ProjectItems } from "../../../../types";
+import { ItemsTable } from "../../../../components/TABLES/items/items_table/ItemsTable";
 
 export interface ItemsProps {
   items: ProjectItems[];
@@ -33,12 +34,9 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
         thirdLabel="Items List"
       />
       {tableItems && tableItems.length > 0 ? (
-        <MainTableCrud
-          project={name}
-          tableItems={tableItems}
-          setTableItems={setTableItems}
-          batchNum={batchNum}
-        />
+        <>
+          <ItemsTable data={tableItems} />
+        </>
       ) : (
         <Message title="No Items" message="There are no items in this batch" />
       )}
@@ -47,3 +45,20 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
 };
 
 export default ItemList;
+
+/*
+ {tableItems && tableItems.length > 0 ? (
+        <>
+          <MainTableCrud
+            project={name}
+            tableItems={tableItems}
+            setTableItems={setTableItems}
+            batchNum={batchNum}
+          />
+          <ItemsTable data={tableItems} />
+        </>
+      ) : (
+        <Message title="No Items" message="There are no items in this batch" />
+      )}
+
+*/
