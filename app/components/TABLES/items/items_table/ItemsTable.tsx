@@ -13,9 +13,9 @@ import {
   Table,
   Column,
   SortingState,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
 import {
-  ContextMenu,
   customCellRenderer,
   down,
   getHighestGroupSeq,
@@ -36,8 +36,10 @@ import {
 import { MdDelete, MdAdd, MdArrowOutward } from "react-icons/md";
 import { HiOutlineDuplicate } from "react-icons/hi";
 import { BiExport, BiHide } from "react-icons/bi";
-import { Filter, IndeterminateCheckbox } from "./components/items_table_comps";
-
+import { ContextMenu } from "./components/ContextMenu";
+import { fuzzyFilter } from "./components/Filter";
+import { Filter } from "./components/Filter";
+import { IndeterminateCheckbox } from "./components/IndeterminateCheckBox";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -399,11 +401,12 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
   const setPrimaryRow = useOptionStore((state) => state.setPrimaryRow);
 
   //------------------------------------state
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [primaryRows, setPrimaryRows] = useState([]);
   const [rowSelection, setRowSelection] = useState({});
   const [sorting, setSorting] = useState<SortingState>([]);
   const [filtering, setFiltering] = useState("");
-  const [columnFilters, setColumnFilters] = useState([]);
+
   const [columnVisibility, setColumnVisibility] = useState({});
   const [tableData, setTableData] = useState(useMemo(() => data, []));
   const [openingMenu, setOpeningMenu] = useState(false);
@@ -420,6 +423,9 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
   const table = useReactTable({
     data: tableData,
     columns,
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
     state: {
       columnFilters,
       sorting,
@@ -437,7 +443,7 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
-
+    globalFilterFn: fuzzyFilter,
     autoResetPageIndex,
     enableRowSelection: true, //enable row selection for all rows
     onRowSelectionChange: setRowSelection,
@@ -605,7 +611,7 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
         }
       }
     });
-  }, [table.getState().columnFilters]);
+  }, [table]);
 
   useEffect(() => {
     const handleClick = () => setClicked(false);
@@ -733,7 +739,7 @@ export const ItemsTable = ({ data }: ItemsTableProps<ProjectItems>) => {
                       <span className="flex h-full items-end text-primary-menu "></span>
                     ) : header.column.getCanFilter() ? (
                       <div className="pb-2">
-                        <Filter column={header.column} />
+                        <Filter column={header.column} table={table} />
                       </div>
                     ) : null}
 

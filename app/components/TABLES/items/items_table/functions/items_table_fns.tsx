@@ -1,23 +1,12 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from "react";
-import { ProjectItems } from "../../../../../types";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { ProjectItemsWithSelect } from "../../../../../types";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
-import { ColumnDef } from "@tanstack/react-table";
 
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
   row: { index: number };
   column: { id: string };
   table: any; // replace 'any' with the actual type of 'table'
-}
-
-interface ProjectItemsWithSelect extends ProjectItems {
-  select: boolean;
 }
 
 interface Column {
@@ -259,54 +248,3 @@ export const up = (
 export const down = (
   <MdKeyboardArrowUp className="text-white cursor-pointer z-40" size={18} />
 );
-
-interface ContextMenuProps {
-  top: number;
-  left: number;
-  onclick: (option: string) => void;
-  row: ProjectItemsWithSelect; // Replace 'any' with the actual type of 'row'
-}
-
-export const ContextMenu: React.FC<ContextMenuProps> = ({
-  top,
-  left,
-  onclick,
-  row,
-}) => {
-  const handleOptionClick = (option: string) => {
-    if (option === "primary") {
-      onclick(option);
-    }
-    if ((row && option === "secondary") || (row && option === "tertiary")) {
-      onclick(option);
-    }
-  };
-
-  return (
-    <div
-      className="absolute w-48 border border-primary-menu bg-white rounded shadow-lg z-50"
-      style={{ top: `${top}px`, left: `${left}px` }}
-    >
-      <ul className="">
-        <li
-          className="cursor-pointer py-2 px-4 hover:bg-gray-100 hover:rounded-t"
-          onClick={() => handleOptionClick("primary")}
-        >
-          Add Primary Row
-        </li>
-        <li
-          className="cursor-pointer py-2 px-4 hover:bg-gray-100 hover:rounded-t"
-          onClick={() => handleOptionClick("secondary")}
-        >
-          Add Secondary Row
-        </li>
-        <li
-          className="cursor-pointer py-2 px-4 hover:bg-gray-100 hover:rounded-t"
-          onClick={() => handleOptionClick("tertiary")}
-        >
-          Add Tertiary Row
-        </li>
-      </ul>
-    </div>
-  );
-};

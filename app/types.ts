@@ -26,6 +26,9 @@ export interface Response {
 }
 
 //----------------------------------- items pages types
+export interface ProjectItemsWithSelect extends ProjectItems {
+  select: boolean;
+}
 export interface SearchParams {
   job_id: string;
   project_name: string;
