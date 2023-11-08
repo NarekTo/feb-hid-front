@@ -58,13 +58,13 @@ export const customCellRenderer = ({
         backgroundColor: index % 2 === 0 ? "white" : "#F3F4F6",
         outline: "none",
         borderRadius: "2px",
-        border: isEditable ? "1px solid #4f85e1" : "none",
+        border: isEditable ? "1px solid #4f85e1" : "1px solid transparent",
       }}
       type="text"
       placeholder={`insert ${
         initialValue === "" ? table.getColumn(id).id : ""
       }`}
-      className={` focus:outline-none focus:ring focus:border-blue-500`}
+      className={`focus:outline-none focus:ring focus:border-blue-500`}
       value={value || ""}
       onChange={(e) => setValue(e.target.value)}
       onBlur={onBlur}
