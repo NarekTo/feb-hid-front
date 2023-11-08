@@ -19,6 +19,7 @@ import {
   down,
   getHighestGroupSeq,
   highestId,
+  lockCellRenderer,
   newRow,
   onDragStart,
   onDrop,
@@ -39,6 +40,8 @@ import { ContextMenu } from "./components/ContextMenu";
 import { fuzzyFilter } from "./components/Filter";
 import { Filter } from "./components/Filter";
 import { IndeterminateCheckbox } from "./components/IndeterminateCheckBox";
+import { is } from "date-fns/locale";
+import FilterIcon from "./components/FilterIcon";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -54,21 +57,31 @@ type useReactTable = <TData extends ProjectItems>(
 export const ItemsTable = React.memo(function ItemsTable({
   data,
 }: ItemsTableProps<ProjectItems>) {
+  //------------------------------------COLUMNS
+  const [isFiltering, setIsFiltering] = useState(false);
+
   const columns: ColumnDef<ProjectItems>[] = useMemo(
     () => [
       {
         id: "select",
         header: ({ table }) => (
-          <IndeterminateCheckbox
-            {...{
-              checked: table.getIsAllRowsSelected(),
-              indeterminate: table.getIsSomeRowsSelected(),
-              onChange: table.getToggleAllRowsSelectedHandler(),
-            }}
-          />
+          <div className="flex flex-col items-center">
+            <FilterIcon
+              clearAllFilters={clearAllFilters}
+              isFiltering={isFiltering}
+            />
+            <IndeterminateCheckbox
+              className="items-center flex my-2"
+              {...{
+                checked: table.getIsAllRowsSelected(),
+                indeterminate: table.getIsSomeRowsSelected(),
+                onChange: table.getToggleAllRowsSelectedHandler(),
+              }}
+            />
+          </div>
         ),
         cell: ({ row }) => (
-          <div className="items-center flex">
+          <div className="items-center flex ml-[3px]">
             <IndeterminateCheckbox
               {...{
                 checked: row.getIsSelected(),
@@ -79,6 +92,12 @@ export const ItemsTable = React.memo(function ItemsTable({
             />
           </div>
         ),
+      },
+      {
+        id: "lock",
+        header: "",
+
+        cell: lockCellRenderer,
       },
       {
         id: "Item_id",
@@ -387,7 +406,7 @@ export const ItemsTable = React.memo(function ItemsTable({
         cell: customCellRenderer,
       },
     ],
-    []
+    [isFiltering]
   );
 
   //------------------------------------zustand store
@@ -406,8 +425,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [primaryRows, setPrimaryRows] = useState([]);
   const [rowSelection, setRowSelection] = useState({});
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [filtering, setFiltering] = useState("");
-
+  const [filterInputKey, setFilterInputKey] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [tableData, setTableData] = useState(useMemo(() => data, []));
   const [openingMenu, setOpeningMenu] = useState(false);
@@ -420,6 +438,14 @@ export const ItemsTable = React.memo(function ItemsTable({
   const tableRef = useRef(null);
   const virtualRef = useRef(null);
 
+  const clearAllFilters = () => {
+    const toggleFiltering = () => setIsFiltering((prevState) => !prevState);
+    table.resetColumnFilters(true);
+    table.resetGlobalFilter(true);
+    toggleFiltering();
+    setFilterInputKey((prevKey) => prevKey + 1);
+  };
+
   //----------------------------------------TABLE
   const table = useReactTable({
     data: tableData,
@@ -430,14 +456,14 @@ export const ItemsTable = React.memo(function ItemsTable({
     state: {
       columnFilters,
       sorting,
-      globalFilter: filtering,
+
       columnVisibility,
       rowSelection,
     },
     onColumnVisibilityChange: setColumnVisibility,
-    debugTable: true,
-    debugHeaders: true,
-    debugColumns: true,
+    // debugTable: true,
+    // debugHeaders: true,
+    // debugColumns: true,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -450,7 +476,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     onRowSelectionChange: setRowSelection,
     onColumnFiltersChange: setColumnFilters,
     onSortingChange: setSorting,
-    onGlobalFilterChange: setFiltering,
 
     meta: {
       updateData: (rowIndex: number, columnId: string, value: any) => {
@@ -473,6 +498,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   });
 
   //----------------------------------------functions
+
   const handleOpening = () => {
     setOpeningMenu(!openingMenu);
   };
@@ -599,7 +625,6 @@ export const ItemsTable = React.memo(function ItemsTable({
   //----------------------------------------useEffects
   useEffect(() => {
     const columnFilters = table.getState().columnFilters;
-    // Iterate over each column filter
     columnFilters.forEach((filter) => {
       const { id } = filter;
       // Check if the column is being filtered
@@ -612,7 +637,9 @@ export const ItemsTable = React.memo(function ItemsTable({
         }
       }
     });
-  }, [table]);
+    console.log("filter?", isFiltering);
+    setIsFiltering(Object.keys(table.getState().columnFilters).length > 0);
+  }, [table.getState().columnFilters]);
 
   useEffect(() => {
     const handleClick = () => setClicked(false);
@@ -635,6 +662,8 @@ export const ItemsTable = React.memo(function ItemsTable({
   useEffect(() => {
     setTableData(data);
   }, [data]);
+
+  //----------------------------------------FILTEEEEEEER
 
   return (
     <div ref={tableRef}>
@@ -740,7 +769,11 @@ export const ItemsTable = React.memo(function ItemsTable({
                       <span className="flex h-full items-end text-primary-menu "></span>
                     ) : header.column.getCanFilter() ? (
                       <div className="pb-2">
-                        <Filter column={header.column} table={table} />
+                        <Filter
+                          key={filterInputKey}
+                          column={header.column}
+                          table={table}
+                        />
                       </div>
                     ) : null}
 

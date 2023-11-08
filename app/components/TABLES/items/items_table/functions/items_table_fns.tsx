@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { ProjectItemsWithSelect } from "../../../../../types";
-import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
+import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
 
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
@@ -72,6 +72,49 @@ export const customCellRenderer = ({
       readOnly={!isEditable}
     />
   );
+};
+
+interface LockCellRendererProps {
+  getValue: () => any; // replace 'any' with the actual type
+  row: { index: number; original: { item_status: string } };
+  column: { id: string };
+  table: any; // replace 'any' with the actual type of 'table'
+}
+
+export const lockCellRenderer = ({
+  getValue,
+  row: { index, original },
+  column: { id },
+  table,
+}: LockCellRendererProps) => {
+  const [color, setColor] = useState<string>("");
+
+  const getColorFromStatus = (item_status: string) => {
+    switch (item_status) {
+      case "IDS":
+        return "yellow";
+      case "IDR":
+        return "red";
+      case "IDA":
+        return "green";
+      case "IOP":
+        return "blue";
+      case "IDT":
+        return "black"; // Changed this to return a color string instead of JSX
+      default:
+        return "orange";
+    }
+  };
+
+  useEffect(() => {
+    setColor(getColorFromStatus(original.item_status));
+  }, [original.item_status]);
+
+  if (original.item_status === "IB" || original.item_status === "ID") {
+    return null;
+  } else {
+    return <MdLock size={14} color={color} />;
+  }
 };
 
 // `columnList` is a function component that renders a list of columns.
