@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ProjectItems, ProjectItemsWithSelect } from "../../../../../types";
+import {
+  ProjectItems,
+  ProjectItemsWithSelect,
+  Session,
+} from "../../../../../types";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
 import { SortingFn, sortingFns } from "@tanstack/react-table";
 import { compareItems } from "@tanstack/match-sorter-utils";
+import { useSession } from "next-auth/react";
 
-interface CustomCellRendererProps {
-  getValue: () => any; // replace 'any' with the actual type
-  row: { index: number };
-  column: { id: string };
-  table: any; // replace 'any' with the actual type of 'table'
-}
 interface idCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
 
@@ -26,14 +25,24 @@ export interface Table {
   getAllLeafColumns: () => Column[];
 }
 
+interface CustomCellRendererProps {
+  getValue: () => any; // replace 'any' with the actual type
+  row: { index: number; original: { Item_id: string } };
+  column: { id: string };
+  table: any; // replace 'any' with the actual type of 'table'
+}
 // `customCellRenderer` is a function component that renders a custom cell.
 // It manages the cell's value and editable state, and handles blur and focus events.
 export const customCellRenderer = ({
   getValue,
-  row: { index },
+  row: {
+    index,
+    original: { Item_id },
+  },
   column: { id },
   table,
 }: CustomCellRendererProps) => {
+  const { data: session } = useSession() as { data: Session | null };
   const initialValue = getValue();
   const [value, setValue] = useState(initialValue);
   const [isEditable, setIsEditable] = useState(false);
@@ -41,9 +50,22 @@ export const customCellRenderer = ({
   const onBlur = async () => {
     if (value !== initialValue) {
       try {
-        //await updateBackendData(index, id, value);
-        console.log("update", value);
-        setValue(value);
+        // Send a PUT request to your backend to update the item
+        const response = await fetch(`http://localhost:3000/items/${Item_id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify({ [id]: value }), // Update the field with the new value
+        });
+
+        if (response.ok) {
+          console.log("Item updated successfully");
+          setValue(value);
+        } else {
+          console.error("Failed to update item");
+        }
       } catch (error) {
         // Handle error if the update fails
         console.error("Error updating data:", error);
@@ -52,6 +74,8 @@ export const customCellRenderer = ({
     setIsEditable(false);
   };
   const onFoc = (e) => {
+    console.log("index", index, "id", id, "value", value, "itemIdI", Item_id);
+    console.log("table", table);
     setIsEditable(true);
   };
 

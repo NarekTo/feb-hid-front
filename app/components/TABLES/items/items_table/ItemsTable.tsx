@@ -539,7 +539,7 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   //this is to update the row with sockets
   const handleKeyDown = async (
-    event: KeyboardEvent,
+    event: React.KeyboardEvent<HTMLTableCellElement>,
     itemId: string,
     key: string
   ) => {
@@ -567,6 +567,13 @@ export const ItemsTable = React.memo(function ItemsTable({
       });
       if (response.ok) {
         console.log("Item updated successfully");
+
+        // Emit the 'itemUpdated' event with the updated item
+        const socket = io("ws://localhost:3002");
+        socket.emit(
+          "itemUpdated",
+          updatedItems.find((item) => item.Item_id === itemId)
+        );
       } else {
         console.log("Failed to update item");
       }
@@ -732,10 +739,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     });
 
     socket.on("itemUpdated", (updatedItem) => {
-      // Handle the 'itemUpdated' event
-      console.log("Received updated item: ", updatedItem);
-
-      // Update the items state with the updated item
       setTableData((prevItems) =>
         prevItems.map((item) =>
           item.Item_id === updatedItem.Item_id ? updatedItem : item
@@ -908,6 +911,14 @@ export const ItemsTable = React.memo(function ItemsTable({
                       cellMeta.getCellContext(cellContext);
                     return (
                       <td
+                        onClick={
+                          cell.column.id === "Item_id"
+                            ? () =>
+                                handleItemClick(
+                                  Number(cell.row.original.Item_id)
+                                )
+                            : undefined
+                        }
                         style={rowStyles}
                         key={cell.id}
                         className={`py-2 ${index === 1 ? "px-0 " : "px-2"}`}
