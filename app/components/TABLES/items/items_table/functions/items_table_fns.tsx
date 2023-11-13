@@ -1,12 +1,19 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ProjectItemsWithSelect } from "../../../../../types";
+import { ProjectItems, ProjectItemsWithSelect } from "../../../../../types";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
+import { SortingFn, sortingFns } from "@tanstack/react-table";
+import { compareItems } from "@tanstack/match-sorter-utils";
 
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
   row: { index: number };
   column: { id: string };
   table: any; // replace 'any' with the actual type of 'table'
+}
+interface idCellRendererProps {
+  getValue: () => any; // replace 'any' with the actual type
+
+  fun: () => any; // replace 'any' with the actual type of 'table'
 }
 
 interface Column {
@@ -73,6 +80,14 @@ export const customCellRenderer = ({
     />
   );
 };
+export const idCellRenderer = ({ getValue, fun }: idCellRendererProps) => {
+  const initialValue = getValue();
+  return (
+    <div className={`text-blue-600 cursor-pointer `} onClick={() => fun()}>
+      {initialValue}
+    </div>
+  );
+};
 
 interface LockCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
@@ -82,10 +97,7 @@ interface LockCellRendererProps {
 }
 
 export const lockCellRenderer = ({
-  getValue,
-  row: { index, original },
-  column: { id },
-  table,
+  row: { original },
 }: LockCellRendererProps) => {
   const [color, setColor] = useState<string>("");
 
@@ -291,3 +303,18 @@ export const up = (
 export const down = (
   <MdKeyboardArrowUp className="text-white cursor-pointer z-40" size={18} />
 );
+
+export const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
+  let dir = 0;
+
+  // Only sort by rank if the column has ranking information
+  if (rowA.columnFiltersMeta[columnId]) {
+    dir = compareItems(
+      rowA.columnFiltersMeta[columnId]?.itemRank!,
+      rowB.columnFiltersMeta[columnId]?.itemRank!
+    );
+  }
+
+  // Provide an alphanumeric fallback for when the item ranks are equal
+  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
+};

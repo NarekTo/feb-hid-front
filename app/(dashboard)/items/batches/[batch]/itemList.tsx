@@ -19,10 +19,17 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
   const [tableItems, setTableItems] = useState<ProjectItems[]>(items);
 
   useEffect(() => {
-    setTableItems(items);
+    const transformedItems = items.map((item) => {
+      const newItem = { ...item };
+      for (const key in newItem) {
+        if (typeof newItem[key] === "string") {
+          newItem[key] = newItem[key].trim();
+        }
+      }
+      return newItem;
+    });
+    setTableItems(transformedItems);
   }, [items]);
-
-  console.log("tableItems", tableItems.length === 0);
 
   return (
     <div className="w-full px-2">
@@ -35,7 +42,12 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
       />
       {tableItems && tableItems.length > 0 ? (
         <>
-          <ItemsTable data={tableItems} />
+          <ItemsTable
+            data={tableItems}
+            setTableItems={setTableItems}
+            project={name}
+            batchNum={batchNum}
+          />
         </>
       ) : (
         <Message title="No Items" message="There are no items in this batch" />

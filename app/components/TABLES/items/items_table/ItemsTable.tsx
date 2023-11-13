@@ -17,8 +17,10 @@ import {
 import {
   customCellRenderer,
   down,
+  fuzzySort,
   getHighestGroupSeq,
   highestId,
+  idCellRenderer,
   lockCellRenderer,
   newRow,
   onDragStart,
@@ -27,7 +29,7 @@ import {
   useSkipper,
 } from "./functions/items_table_fns";
 import React, { useMemo, useRef, useState, useEffect, useReducer } from "react";
-import { ProjectItems } from "../../../../types";
+import { ProjectItems, Session } from "../../../../types";
 import { useOptionStore } from "../../../../store/store";
 import {
   IconWithDescription,
@@ -40,11 +42,17 @@ import { ContextMenu } from "./components/ContextMenu";
 import { fuzzyFilter } from "./components/Filter";
 import { Filter } from "./components/Filter";
 import { IndeterminateCheckbox } from "./components/IndeterminateCheckBox";
-import { is } from "date-fns/locale";
 import FilterIcon from "./components/FilterIcon";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+import { io } from "socket.io-client";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
+  project: string;
+  batchNum: string;
+  setTableItems: React.Dispatch<React.SetStateAction<T[]>>;
 }
 interface ExtendedColumnMeta extends ColumnMeta<ProjectItems, unknown> {
   getCellContext?: (cellContext: any) => any; // replace 'any' with the actual types if known
@@ -56,7 +64,16 @@ type useReactTable = <TData extends ProjectItems>(
 //------------------------------------MAIN COMPONENT
 export const ItemsTable = React.memo(function ItemsTable({
   data,
+  project,
+  batchNum,
 }: ItemsTableProps<ProjectItems>) {
+  const searchParams = useSearchParams();
+  const { data: session } = useSession() as { data: Session | null };
+
+  const router = useRouter();
+  const job_id = searchParams.get("job_id") as string;
+  const [tableData, setTableData] = useState(useMemo(() => data, []));
+
   //------------------------------------COLUMNS
   const [isFiltering, setIsFiltering] = useState(false);
 
@@ -96,14 +113,19 @@ export const ItemsTable = React.memo(function ItemsTable({
       {
         id: "lock",
         header: "",
-
         cell: lockCellRenderer,
       },
       {
         id: "Item_id",
-        header: "Item id",
         accessorKey: "Item_id",
-        cell: customCellRenderer,
+        header: "Item id",
+        cell: (cellInfo) =>
+          idCellRenderer({
+            getValue: () => cellInfo.row.original.Item_id,
+            fun: () => handleItemClick(Number(cellInfo.row.original.Item_id)),
+          }),
+        filterFn: "fuzzy",
+        sortingFn: fuzzySort,
       },
       {
         id: "job_id",
@@ -427,7 +449,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [filterInputKey, setFilterInputKey] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState({});
-  const [tableData, setTableData] = useState(useMemo(() => data, []));
+
   const [openingMenu, setOpeningMenu] = useState(false);
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
   const [clicked, setClicked] = useState(false);
@@ -453,10 +475,10 @@ export const ItemsTable = React.memo(function ItemsTable({
     filterFns: {
       fuzzy: fuzzyFilter,
     },
+
     state: {
       columnFilters,
       sorting,
-
       columnVisibility,
       rowSelection,
     },
@@ -470,12 +492,12 @@ export const ItemsTable = React.memo(function ItemsTable({
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    globalFilterFn: fuzzyFilter,
     autoResetPageIndex,
     enableRowSelection: true, //enable row selection for all rows
     onRowSelectionChange: setRowSelection,
     onColumnFiltersChange: setColumnFilters,
     onSortingChange: setSorting,
+    // Add this line
 
     meta: {
       updateData: (rowIndex: number, columnId: string, value: any) => {
@@ -499,8 +521,63 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   //----------------------------------------functions
 
+  //this is to open the single item page
+  const handleItemClick = (itemId: number) => {
+    const item = itemId.toString();
+    const jobId = job_id.trim();
+    router.push(
+      `/items/batches/${batchNum}/${item}?job_id=${jobId}&project_name=${project.replace(
+        / /g,
+        "_"
+      )}`
+    );
+  };
+
   const handleOpening = () => {
     setOpeningMenu(!openingMenu);
+  };
+
+  //this is to update the row with sockets
+  const handleKeyDown = async (
+    event: KeyboardEvent,
+    itemId: string,
+    key: string
+  ) => {
+    if (event.key === "Tab") {
+      event.preventDefault(); // Prevent the default action (moving to the next cell)
+      const updatedValue = (event.target as HTMLElement).innerText;
+      const updatedItems = tableData.map((item) => {
+        if (item.Item_id === itemId) {
+          return { ...item, [key]: updatedValue };
+        }
+        return item;
+      });
+      setTableData(updatedItems);
+
+      // Call your API to update the item in the database
+      const response = await fetch(`http://localhost:3000/items/${itemId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+        body: JSON.stringify(
+          updatedItems.find((item) => item.Item_id === itemId)
+        ),
+      });
+      if (response.ok) {
+        console.log("Item updated successfully");
+      } else {
+        console.log("Failed to update item");
+      }
+
+      // Move the focus to the next cell
+      const targetElement = event.target as HTMLElement;
+      const nextCell = targetElement.nextElementSibling;
+      if (nextCell instanceof HTMLElement) {
+        nextCell.focus();
+      }
+    }
   };
 
   const handleAdd = (kind: "primary" | "secondary" | "tertiary"): void => {
@@ -631,13 +708,8 @@ export const ItemsTable = React.memo(function ItemsTable({
       if (id) {
         const sorting = table.getState().sorting;
         // Check if the column is not already sorted
-        if (!sorting.some((sort) => sort.id === id)) {
-          // Set the sorting for the filtered column
-          table.setSorting([{ id, desc: false }]);
-        }
       }
     });
-    console.log("filter?", isFiltering);
     setIsFiltering(Object.keys(table.getState().columnFilters).length > 0);
   }, [table.getState().columnFilters]);
 
@@ -649,11 +721,33 @@ export const ItemsTable = React.memo(function ItemsTable({
         setSelectedRow(null);
       }
     };
+    const socket = io("ws://localhost:3002");
+
+    socket.on("connect", () => {
+      console.log("WebSocket connection opened");
+    });
+
+    socket.on("error", (error: Error | string) => {
+      console.log("WebSocket error: ", error);
+    });
+
+    socket.on("itemUpdated", (updatedItem) => {
+      // Handle the 'itemUpdated' event
+      console.log("Received updated item: ", updatedItem);
+
+      // Update the items state with the updated item
+      setTableData((prevItems) =>
+        prevItems.map((item) =>
+          item.Item_id === updatedItem.Item_id ? updatedItem : item
+        )
+      );
+    });
     // Add event listeners
     document.addEventListener("click", handleOutsideClick);
     window.addEventListener("click", handleClick);
     // Cleanup function
     return () => {
+      socket.close();
       document.removeEventListener("click", handleOutsideClick);
       window.removeEventListener("click", handleClick);
     };
@@ -757,7 +851,6 @@ export const ItemsTable = React.memo(function ItemsTable({
                     draggable={
                       !table.getState().columnSizingInfo.isResizingColumn
                     }
-                    onClick={header.column.getToggleSortingHandler()} // Add sorting handler here
                     data-column-index={header.index}
                     onDragStart={onDragStart}
                     onDragOver={(e) => {
@@ -765,9 +858,7 @@ export const ItemsTable = React.memo(function ItemsTable({
                     }}
                     onDrop={(e) => onDrop(e, table)}
                   >
-                    {header.column.id === "image" ? (
-                      <span className="flex h-full items-end text-primary-menu "></span>
-                    ) : header.column.getCanFilter() ? (
+                    {header.column.getCanFilter() ? (
                       <div className="pb-2">
                         <Filter
                           key={filterInputKey}
@@ -777,24 +868,19 @@ export const ItemsTable = React.memo(function ItemsTable({
                       </div>
                     ) : null}
 
-                    {header.column.id === "image" ? (
-                      <span className=""> </span>
-                    ) : header.isPlaceholder ? null : (
-                      <div
-                        className="flex items-center "
-                        onClick={header.column.getToggleSortingHandler} // Add sorting handler here
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getIsSorted()
-                          ? header.column.getIsSorted() === "asc"
-                            ? up
-                            : down
-                          : null}{" "}
-                      </div>
-                    )}
+                    <div
+                      className="flex items-center "
+                      onClick={header.column.getToggleSortingHandler()} // Moved sorting handler here
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                      {{
+                        asc: up,
+                        desc: down,
+                      }[header.column.getIsSorted() as string] ?? null}
+                    </div>
                   </th>
                 ))}
               </tr>
