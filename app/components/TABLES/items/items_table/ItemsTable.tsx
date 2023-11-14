@@ -47,6 +47,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { io } from "socket.io-client";
+import TopMenuButton from "./components/topMenu/TopMenuButton";
+import { AddButton } from "./components/topMenu/AddButton";
+
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -691,13 +694,12 @@ export const ItemsTable = React.memo(function ItemsTable({
     socket.on("itemUpdated", (updatedItem) => {
       console.log("Received updated item: ", updatedItem);
       // Trim all string values in the updated item
-      const trimmedItem = Object.entries(updatedItem).reduce(
-        (acc, [key, value]) => {
-          acc[key] = typeof value === "string" ? value.trim() : value;
-          return acc;
-        },
-        {} as typeof updatedItem
-      );
+      let trimmedItem = { ...updatedItem };
+      for (let key in trimmedItem) {
+        if (typeof trimmedItem[key] === "string") {
+          trimmedItem[key] = trimmedItem[key].trim();
+        }
+      }
       setTableData((prevItems) =>
         prevItems.map((item) =>
           item.Item_id === trimmedItem.Item_id ? trimmedItem : item
@@ -733,24 +735,16 @@ export const ItemsTable = React.memo(function ItemsTable({
       )}
       <div
         style={{ height: openingMenu ? "80px" : "40px" }}
-        className="flex items-start duration-500 ease-in-out"
+        className="flex items-start duration-500 ease-in-out mb-2"
       >
-        <div className="absolute flex">
-          <IconWithDescription
-            icon={BiHide}
-            description="Hide Columns"
-            onclick={handleOpening}
-          />
+        <div className="absolute flex gap-2">
+          <TopMenuButton description="Hide Columns" onClick={handleOpening} />
+
+          <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
           <IconWithDescription
             icon={MdDelete}
             description="Delete"
             onclick={handleDelete}
-          />
-          <IconWithDescriptionDD
-            icon={MdAdd}
-            description="Add"
-            onclick={handleAdd}
-            row={selectedRow}
           />
           <IconWithDescription
             icon={MdArrowOutward}
@@ -771,7 +765,6 @@ export const ItemsTable = React.memo(function ItemsTable({
         {openingMenu && (
           <div className="flex bg-white w-full p-2 text-xs shadow-lg mt-9 rounded-md">
             {table.getAllLeafColumns().map((column) => {
-              console.log("column", column.getIsVisible);
               return (
                 <div key={column.id} className="px-1">
                   <label>
