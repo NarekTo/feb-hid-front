@@ -537,56 +537,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     setOpeningMenu(!openingMenu);
   };
 
-  //this is to update the row with sockets
-  const handleKeyDown = async (
-    event: React.KeyboardEvent<HTMLTableCellElement>,
-    itemId: string,
-    key: string
-  ) => {
-    if (event.key === "Tab") {
-      event.preventDefault(); // Prevent the default action (moving to the next cell)
-      const updatedValue = (event.target as HTMLElement).innerText;
-      const updatedItems = tableData.map((item) => {
-        if (item.Item_id === itemId) {
-          return { ...item, [key]: updatedValue };
-        }
-        return item;
-      });
-      setTableData(updatedItems);
-
-      // Call your API to update the item in the database
-      const response = await fetch(`http://localhost:3000/items/${itemId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-        body: JSON.stringify(
-          updatedItems.find((item) => item.Item_id === itemId)
-        ),
-      });
-      if (response.ok) {
-        console.log("Item updated successfully");
-
-        // Emit the 'itemUpdated' event with the updated item
-        const socket = io("ws://localhost:3002");
-        socket.emit(
-          "itemUpdated",
-          updatedItems.find((item) => item.Item_id === itemId)
-        );
-      } else {
-        console.log("Failed to update item");
-      }
-
-      // Move the focus to the next cell
-      const targetElement = event.target as HTMLElement;
-      const nextCell = targetElement.nextElementSibling;
-      if (nextCell instanceof HTMLElement) {
-        nextCell.focus();
-      }
-    }
-  };
-
   const handleAdd = (kind: "primary" | "secondary" | "tertiary"): void => {
     const { setGroupNumber, setGroupSequence, setPrimaryRow, setSelectedRow } =
       useOptionStore();
@@ -739,9 +689,18 @@ export const ItemsTable = React.memo(function ItemsTable({
     });
 
     socket.on("itemUpdated", (updatedItem) => {
+      console.log("Received updated item: ", updatedItem);
+      // Trim all string values in the updated item
+      const trimmedItem = Object.entries(updatedItem).reduce(
+        (acc, [key, value]) => {
+          acc[key] = typeof value === "string" ? value.trim() : value;
+          return acc;
+        },
+        {} as typeof updatedItem
+      );
       setTableData((prevItems) =>
         prevItems.map((item) =>
-          item.Item_id === updatedItem.Item_id ? updatedItem : item
+          item.Item_id === trimmedItem.Item_id ? trimmedItem : item
         )
       );
     });

@@ -27,26 +27,22 @@ export interface Table {
 
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
-  row: { index: number; original: { Item_id: string } };
+  row: { index: number; original: ProjectItems };
   column: { id: string };
   table: any; // replace 'any' with the actual type of 'table'
 }
 // `customCellRenderer` is a function component that renders a custom cell.
 // It manages the cell's value and editable state, and handles blur and focus events.
 export const customCellRenderer = ({
-  getValue,
-  row: {
-    index,
-    original: { Item_id },
-  },
+  row: { index, original },
   column: { id },
   table,
 }: CustomCellRendererProps) => {
   const { data: session } = useSession() as { data: Session | null };
-  const initialValue = getValue();
+  const initialValue = original[id];
   const [value, setValue] = useState(initialValue);
   const [isEditable, setIsEditable] = useState(false);
-
+  const Item_id = original.Item_id;
   const onBlur = async () => {
     if (value !== initialValue) {
       try {
@@ -74,14 +70,12 @@ export const customCellRenderer = ({
     setIsEditable(false);
   };
   const onFoc = (e) => {
-    console.log("index", index, "id", id, "value", value, "itemIdI", Item_id);
-    console.log("table", table);
     setIsEditable(true);
   };
 
   useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
+    setValue(original[id]);
+  }, [original[id]]);
 
   return (
     <input
