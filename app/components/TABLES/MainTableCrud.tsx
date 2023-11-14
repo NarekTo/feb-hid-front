@@ -92,7 +92,7 @@ const MainTableCrud: FC<MainTableCrudProps> = ({
     });
 
     socket.on("error", (error: Error | string) => {
-      console.log("WebSocket error: ", error);
+      console.log("Web error: ", error);
     });
 
     socket.on("itemUpdated", (updatedItem) => {

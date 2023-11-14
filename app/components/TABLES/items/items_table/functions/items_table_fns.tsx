@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ProjectItems } from "../../../../../types";
-import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
+import {
+  ProjectItems,
+  ProjectItemsWithSelect,
+  Session,
+} from "../../../../../types";
+import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
+import { SortingFn, sortingFns } from "@tanstack/react-table";
+import { compareItems } from "@tanstack/match-sorter-utils";
+import { useSession } from "next-auth/react";
 
-interface CustomCellRendererProps {
+interface idCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
-  row: { index: number };
-  column: { id: string };
-  table: any; // replace 'any' with the actual type of 'table'
-}
 
-interface ProjectItemsWithSelect extends ProjectItems {
-  select: boolean;
+  fun: () => any; // replace 'any' with the actual type of 'table'
 }
 
 interface Column {
@@ -23,24 +25,43 @@ export interface Table {
   getAllLeafColumns: () => Column[];
 }
 
+interface CustomCellRendererProps {
+  getValue: () => any; // replace 'any' with the actual type
+  row: { index: number; original: ProjectItems };
+  column: { id: string };
+  table: any; // replace 'any' with the actual type of 'table'
+}
 // `customCellRenderer` is a function component that renders a custom cell.
 // It manages the cell's value and editable state, and handles blur and focus events.
 export const customCellRenderer = ({
-  getValue,
-  row: { index },
+  row: { index, original },
   column: { id },
   table,
 }: CustomCellRendererProps) => {
-  const initialValue = getValue();
+  const { data: session } = useSession() as { data: Session | null };
+  const initialValue = original[id];
   const [value, setValue] = useState(initialValue);
   const [isEditable, setIsEditable] = useState(false);
-
+  const Item_id = original.Item_id;
   const onBlur = async () => {
     if (value !== initialValue) {
       try {
-        //await updateBackendData(index, id, value);
-        console.log("update", value);
-        setValue(value);
+        // Send a PUT request to your backend to update the item
+        const response = await fetch(`http://localhost:3000/items/${Item_id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify({ [id]: value }), // Update the field with the new value
+        });
+
+        if (response.ok) {
+          console.log("Item updated successfully");
+          setValue(value);
+        } else {
+          console.error("Failed to update item");
+        }
       } catch (error) {
         // Handle error if the update fails
         console.error("Error updating data:", error);
@@ -53,8 +74,8 @@ export const customCellRenderer = ({
   };
 
   useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
+    setValue(original[id]);
+  }, [original[id]]);
 
   return (
     <input
@@ -62,13 +83,13 @@ export const customCellRenderer = ({
         backgroundColor: index % 2 === 0 ? "white" : "#F3F4F6",
         outline: "none",
         borderRadius: "2px",
-        border: isEditable ? "1px solid #4f85e1" : "none",
+        border: isEditable ? "1px solid #4f85e1" : "1px solid transparent",
       }}
       type="text"
       placeholder={`insert ${
         initialValue === "" ? table.getColumn(id).id : ""
       }`}
-      className={` focus:outline-none focus:ring focus:border-blue-500`}
+      className={`focus:outline-none focus:ring focus:border-blue-500`}
       value={value || ""}
       onChange={(e) => setValue(e.target.value)}
       onBlur={onBlur}
@@ -76,6 +97,73 @@ export const customCellRenderer = ({
       readOnly={!isEditable}
     />
   );
+};
+export const idCellRenderer = ({ getValue, fun }: idCellRendererProps) => {
+  const initialValue = getValue();
+  return (
+    <div className={`text-blue-600 cursor-pointer `} onClick={() => fun()}>
+      {initialValue}
+    </div>
+  );
+};
+
+interface LockCellRendererProps {
+  getValue: () => any; // replace 'any' with the actual type
+  row: { index: number; original: { item_status: string } };
+  column: { id: string };
+  table: any; // replace 'any' with the actual type of 'table'
+}
+
+export const lockCellRenderer = ({
+  row: { original },
+}: LockCellRendererProps) => {
+  const [color, setColor] = useState<string>("");
+
+  const getColorFromStatus = (item_status: string) => {
+    switch (item_status) {
+      case "IDS":
+        return "yellow";
+      case "IDR":
+        return "red";
+      case "IDA":
+        return "green";
+      case "IOP":
+        return "blue";
+      case "IDT":
+        return "black"; // Changed this to return a color string instead of JSX
+      default:
+        return "orange";
+    }
+  };
+
+  useEffect(() => {
+    setColor(getColorFromStatus(original.item_status));
+  }, [original.item_status]);
+
+  if (original.item_status === "IB" || original.item_status === "ID") {
+    return null;
+  } else {
+    return <MdLock size={14} color={color} />;
+  }
+};
+
+// `columnList` is a function component that renders a list of columns.
+export const columnList = (currTable) => {
+  return currTable.getAllLeafColumns().map((column: Column) => {
+    console.log("column", column.getIsVisible);
+    return (
+      <div key={column.id} className="px-1">
+        <label>
+          <input
+            type="checkbox"
+            checked={column.getIsVisible()}
+            onChange={column.getToggleVisibilityHandler()}
+          />
+          {column.id}
+        </label>
+      </div>
+    );
+  });
 };
 
 // `columnBeingDragged` is a variable that holds the index of the column being dragged.
@@ -234,53 +322,17 @@ export const down = (
   <MdKeyboardArrowUp className="text-white cursor-pointer z-40" size={18} />
 );
 
-interface ContextMenuProps {
-  top: number;
-  left: number;
-  onclick: (option: string) => void;
-  row: ProjectItemsWithSelect; // Replace 'any' with the actual type of 'row'
-}
+export const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
+  let dir = 0;
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({
-  top,
-  left,
-  onclick,
-  row,
-}) => {
-  const handleOptionClick = (option: string) => {
-    if (option === "primary") {
-      onclick(option);
-    }
-    if ((row && option === "secondary") || (row && option === "tertiary")) {
-      onclick(option);
-    }
-  };
+  // Only sort by rank if the column has ranking information
+  if (rowA.columnFiltersMeta[columnId]) {
+    dir = compareItems(
+      rowA.columnFiltersMeta[columnId]?.itemRank!,
+      rowB.columnFiltersMeta[columnId]?.itemRank!
+    );
+  }
 
-  return (
-    <div
-      className="absolute w-48 border border-primary-menu bg-white rounded shadow-lg z-50"
-      style={{ top: `${top}px`, left: `${left}px` }}
-    >
-      <ul className="">
-        <li
-          className="cursor-pointer py-2 px-4 hover:bg-gray-100 hover:rounded-t"
-          onClick={() => handleOptionClick("primary")}
-        >
-          Add Primary Row
-        </li>
-        <li
-          className="cursor-pointer py-2 px-4 hover:bg-gray-100 hover:rounded-t"
-          onClick={() => handleOptionClick("secondary")}
-        >
-          Add Secondary Row
-        </li>
-        <li
-          className="cursor-pointer py-2 px-4 hover:bg-gray-100 hover:rounded-t"
-          onClick={() => handleOptionClick("tertiary")}
-        >
-          Add Tertiary Row
-        </li>
-      </ul>
-    </div>
-  );
+  // Provide an alphanumeric fallback for when the item ranks are equal
+  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
 };
