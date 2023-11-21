@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dark-blue: #144265;
+  --light-blue: #27a3f6;
+  --primary-button: #4472c4;
+  --secondary-button: #4f85e1;
+  --terciary-button: #ffffff;
+
+  --primary-table: #b4c6e7;
+  --secondary-table: #d9e1f2;
+  --secondary-font: #8ba0da;
+}
+
+/* base styles */
+body {
+  background: #ffffff;
+  @apply text-dark-blue ;
+}
+h1,
+h2 {
+  @apply font-bold text-dark-blue text-lg;
+}
+main {
+  @apply w-full ;
+}
+
+
+nav {
+  @apply p-4
+    flex items-center justify-between  
+    w-full;
+}
+
+.error {
+  @apply border-2 
+    border-red-500 
+    bg-red-300
+    text-red-800 
+    py-1 px-2 
+    rounded-sm
+    block
+    max-w-fit
+    my-4 mx-auto;
+}
+
