@@ -220,8 +220,17 @@ export const customCellRenderer = ({
 export const idCellRenderer = ({ getValue, fun }: idCellRendererProps) => {
   const initialValue = getValue();
   return (
-    <div className={`text-blue-600 cursor-pointer `} onClick={() => fun()}>
-      {initialValue}
+    <div onClick={(e) => e.stopPropagation()}>
+      <a
+        className="text-blue-600 cursor-pointer underline "
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          fun();
+        }}
+      >
+        {initialValue}
+      </a>
     </div>
   );
 };
