@@ -44,20 +44,14 @@ interface TableItem {
 
 //-------------------------------------------------------------Top Menu Functions-------------------------------------------------------------
 
-export const getHighestGroupSeq = (
-  table: TableItem[],
-  groupNum: string
-): number => {
-  let highestGroupSeq = 0;
-  for (const item of table) {
-    if (item.group_number === groupNum) {
-      const groupSeq = parseInt(item.group_sequence);
-      if (groupSeq > highestGroupSeq) {
-        highestGroupSeq = groupSeq;
-      }
-    }
-  }
-  return highestGroupSeq + 1;
+export const calculateHighestGroupSeq = (data, actualRow) => {
+  const groupNumRows = data.filter(
+    (row) => row.group_number === actualRow.group_number
+  );
+  console.log("number of rows", groupNumRows.length);
+  const highestGroupSeq = groupNumRows.length + 1;
+  console.log("highest group seq", highestGroupSeq);
+  return highestGroupSeq;
 };
 
 export const fetchTableData = async (
@@ -89,6 +83,21 @@ export const fetchTableData = async (
     console.error("Error fetching table data:", error);
   }
 };
+export const getHighestItemId = (items) => {
+  let highest = 0;
+  if (Array.isArray(items)) {
+    items.forEach((item) => {
+      if (parseInt(item.Item_id) > highest) {
+        highest = parseInt(item.Item_id);
+      }
+    });
+  } else {
+    console.error("Error: items is not an array", items);
+  }
+  return highest;
+};
+
+//-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
 
 export const addRow = async (
   newRow: ProjectItemsWithSelect,
@@ -135,20 +144,6 @@ export const deleteRow = async (itemId: string, session: Session | null) => {
   } catch (error) {
     console.error("Error deleting row:", error);
   }
-};
-
-export const getHighestItemId = (items) => {
-  let highest = 0;
-  if (Array.isArray(items)) {
-    items.forEach((item) => {
-      if (parseInt(item.Item_id) > highest) {
-        highest = parseInt(item.Item_id);
-      }
-    });
-  } else {
-    console.error("Error: items is not an array", items);
-  }
-  return highest;
 };
 
 //-------------------------------------------------------------Cell Functions-------------------------------------------------------------
@@ -416,4 +411,12 @@ export const newRow: ProjectItemsWithSelect = {
   supplier_notes: "",
   created_date: null,
   modified_date: null,
+};
+
+export const sortTableData = (data: ProjectItems[]) => {
+  return [...data].sort((a, b) => {
+    if (a.group_number < b.group_number) return -1;
+    if (a.group_number > b.group_number) return 1;
+    return Number(a.group_sequence) - Number(b.group_sequence);
+  });
 };

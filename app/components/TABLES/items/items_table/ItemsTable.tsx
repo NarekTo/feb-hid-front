@@ -17,18 +17,19 @@ import {
 } from "@tanstack/react-table";
 import {
   addRow,
+  calculateHighestGroupSeq,
   customCellRenderer,
   deleteRow,
   down,
   fetchTableData,
   fuzzySort,
-  getHighestGroupSeq,
   getHighestItemId,
   idCellRenderer,
   lockCellRenderer,
   newRow,
   onDragStart,
   onDrop,
+  sortTableData,
   up,
   useSkipper,
 } from "./functions/items_table_fns";
@@ -77,7 +78,8 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [tableData, setTableData] = useState(useMemo(() => data, []));
   const [isFiltering, setIsFiltering] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState({}); //internal use of the table for select rows // custom object we use to store all selected rows
+  const [rowSelection, setRowSelection] = useState({}); //object of booleans, selection throu checkbox, can be many rows or one
+  const [groupSequence, setGroupSequence] = useState<number[]>([]); //array of numbers, selection through click, can be many rows or one
   const [sorting, setSorting] = useState<SortingState>([]);
   const [filterInputKey, setFilterInputKey] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -528,17 +530,16 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handleOpening = () => {
     setOpeningMenu(!openingMenu);
   };
-
   const handleAdd = async (
     kind: "primary" | "secondary" | "tertiary"
   ): Promise<void> => {
     const { project, batch, items } = await fetchTableData(
-      //i made an endpoint specifically to get all this data in one call
       Number(job_id),
       batchNum,
       session
     );
     const highest = (getHighestItemId(items) + 1).toString();
+
     const newTableRow = {
       ...newRow,
       Item_id: highest,
@@ -558,103 +559,66 @@ export const ItemsTable = React.memo(function ItemsTable({
           : "UN",
     };
 
-    if (kind === "primary") {
-      newTableRow.group_number = highest;
-      newTableRow.group_sequence = "1";
-      // Add the new primary row to the primary rows in Zustand
-      addRow(newTableRow, session); //DB POST api call
-      setTableData((prevData) => [newTableRow, ...prevData]); // Add the new primary row to the table data
-    } else if (kind === "secondary") {
-      // Check if a row is selected
-      if (selectedRow) {
-        console.log("selected row from secondary", selectedRow);
-        // Calculate the group sequence for the new secondary row
-        const groupNumRows = data.filter(
-          (row) => row.group_number === selectedRow.group_number
+    if (selectedRow) {
+      const groupNumRows = tableData.filter(
+        (row) => row.group_number === selectedRow.group_number
+      );
+      const highestGroupSeq = groupNumRows.length + 1;
+      newTableRow.group_number = selectedRow.group_number;
+      newTableRow.location_code = selectedRow.location_code;
+
+      if (kind === "secondary") {
+        // Find all secondary rows in the same group as the selected row
+        const secondaryRows = groupNumRows.filter(
+          (row) => Number(row.group_sequence) < 101
         );
+        const highestGroupSeq = secondaryRows.length + 1;
+        newTableRow.group_sequence = highestGroupSeq.toString();
+      } else if (kind === "tertiary") {
         const highestGroupSeq =
           groupNumRows.length > 0
-            ? Math.max(
-                ...groupNumRows.map((row) => Number(row.group_sequence))
-              ) + 1
-            : 1;
-        console.log("highest group seq", highestGroupSeq);
-        newTableRow.group_sequence = highestGroupSeq.toString();
-        newTableRow.group_number = selectedRow.group_number;
+            ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence)))
+            : 0;
 
-        setTableData((prevData) => [newTableRow, ...prevData]);
-        addRow(newTableRow, session); // Add the new secondary row to the database
+        newTableRow.group_sequence = (
+          highestGroupSeq < 101 ? 101 : highestGroupSeq + 1
+        ).toString();
       }
-    } else if (kind === "tertiary") {
-      // Check if a primary row is selected
-      if (selectedRow) {
-        const primaryRow = data.find(
-          (row) => row.Item_id === selectedRow.Item_id
-        );
-        if (primaryRow) {
-          newTableRow.Item_id = highest;
-          newTableRow.group_number = primaryRow.group_number;
-
-          // Calculate the highest group sequence for the selected group number
-          const groupNumRows = data.filter(
-            (row) => row.group_number === primaryRow.group_number
-          );
-          const highestGroupSeq =
-            groupNumRows.length > 0
-              ? Math.max(
-                  ...groupNumRows.map((row) => Number(row.group_sequence))
-                )
-              : 0;
-
-          newTableRow.group_sequence = (
-            highestGroupSeq >= 100 ? highestGroupSeq + 1 : 101
-          ).toString();
-
-          newTableRow.job_id = job_id;
-          newTableRow.batch_number = batchNum;
-          newTableRow.created_date = new Date();
-          newTableRow.budget_currency = project.currency_code;
-          if (batch.batch_status === "BB") {
-            newTableRow.item_status = "IB";
-          } else if (batch.batch_status === "BD") {
-            newTableRow.item_status = "ID";
-          }
-
-          // Insert the tertiary row below the primary row
-          const newData = [...data];
-          const primaryIndex = newData.findIndex(
-            (row) => row.Item_id === primaryRow.Item_id
-          );
-          newData.splice(primaryIndex + 1, 0, newTableRow);
-
-          // Sort the rows by group number and group sequence
-          newData.sort((a, b) => {
-            if (a.group_number === b.group_number) {
-              return Number(a.group_sequence) - Number(b.group_sequence);
-            } else {
-              return a.group_number.localeCompare(b.group_number);
-            }
-          });
-
-          setTableData(newData);
-          addRow(newTableRow, session); // Add the new tertiary row to the database
-        }
-      }
+    } else if (kind === "primary") {
+      newTableRow.group_number = highest;
+      newTableRow.group_sequence = "1";
     }
+
+    addRow(newTableRow, session); //DB POST api call
   };
 
   const handleDelete = async () => {
+    console.log("selectedRow from delete", selectedRow);
+    console.log("row selection", rowSelection);
     if (selectedRow && "Item_id" in selectedRow) {
       const itemId = selectedRow["Item_id"] as string;
       try {
         await deleteRow(itemId, session);
-        setTableData((prevItems) =>
-          prevItems.filter((item) => item.Item_id !== itemId)
-        );
       } catch (error) {
         console.error("Failed to delete row", error);
       }
+    } else if (Object.keys(rowSelection).length > 0) {
+      // Get the selected rows
+      const selectedRows = Object.entries(rowSelection)
+        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+        .map(([key]) => tableData[key]);
+
+      // Delete each selected row
+      for (const row of selectedRows) {
+        const itemId = row.Item_id;
+        try {
+          await deleteRow(itemId, session);
+        } catch (error) {
+          console.error("Failed to delete row", error);
+        }
+      }
     }
+    setRowSelection({});
   };
 
   const onRowClick = (row: Row<ProjectItems>) => {
@@ -666,18 +630,9 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     if (!isAnyRowSelected) {
       setSelectedRow(actualRow);
-      const groupNumRows = data.filter(
-        (row) => row.group_number === actualRow.group_number
-      );
-      console.log("groupNumRows", groupNumRows);
-      const highestGroupSeq =
-        groupNumRows.length > 0
-          ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence))) +
-            1
-          : 1;
-      console.log("highest group seq", highestGroupSeq);
+      console.log("tableData", tableData);
+      console.log("highest", calculateHighestGroupSeq(tableData, actualRow));
     }
-    console.log("row", actualRow);
   };
 
   const getRowStyles = (row: Row<ProjectItems>, index: number) => {
@@ -711,17 +666,16 @@ export const ItemsTable = React.memo(function ItemsTable({
         setSelectedRow(null);
       }
     };
+    document.addEventListener("click", handleOutsideClick);
+    window.addEventListener("click", handleClick);
 
     const socket = io("ws://localhost:3002");
-
     socket.on("connect", () => {
       console.log("WebSocket connection opened");
     });
-
     socket.on("error", (error: Error | string) => {
       console.log("WebSocket error: ", error);
     });
-
     socket.on("itemUpdated", (updatedItem) => {
       console.log("Received updated item: ", updatedItem);
       // Trim all string values in the updated item
@@ -737,33 +691,39 @@ export const ItemsTable = React.memo(function ItemsTable({
         )
       );
     });
-    socket.on("itemDeleted", (deletedItemId) => {
-      console.log("Received deleted item ID: ", deletedItemId);
+    socket.on("itemDeleted", (deletedItem) => {
       setTableData((prevItems) =>
-        prevItems.filter((item) => item.Item_id !== deletedItemId)
+        prevItems.filter((item) => item.Item_id !== deletedItem.Item_id.trim())
       );
     });
-    // Add event listeners
-    document.addEventListener("click", handleOutsideClick);
-    window.addEventListener("click", handleClick);
+    socket.on("itemAdded", (addedItem) => {
+      let trimmedItem = { ...addedItem };
+      for (let key in trimmedItem) {
+        if (typeof trimmedItem[key] === "string") {
+          trimmedItem[key] = trimmedItem[key].trim();
+        }
+      }
+
+      setTableData((prevItems) => {
+        const updatedData = [trimmedItem, ...prevItems];
+        return sortTableData(updatedData);
+      });
+    });
+
+    const sortedData = [...data].sort((a, b) => {
+      if (a.group_number < b.group_number) return -1;
+      if (a.group_number > b.group_number) return 1;
+      return Number(a.group_sequence) - Number(b.group_sequence);
+    });
+
+    setTableData(sortedData);
+    console.log("sorted data", sortedData);
     // Cleanup function
     return () => {
       socket.close();
       document.removeEventListener("click", handleOutsideClick);
       window.removeEventListener("click", handleClick);
     };
-  }, []);
-
-  useEffect(() => {
-    const sortedData = [...data].sort((a, b) => {
-      // First, sort by group_number
-      if (a.group_number < b.group_number) return -1;
-      if (a.group_number > b.group_number) return 1;
-      // If group_number is the same, sort by group_sequence
-      return Number(a.group_sequence) - Number(b.group_sequence);
-    });
-
-    setTableData(sortedData);
   }, [data]);
 
   return (
@@ -922,3 +882,71 @@ export const ItemsTable = React.memo(function ItemsTable({
     </div>
   );
 });
+
+/*
+
+  const handleAdd = async (
+    kind: "primary" | "secondary" | "tertiary"
+  ): Promise<void> => {
+    const { project, batch, items } = await fetchTableData(
+      //i made an endpoint specifically to get all this data in one call
+      Number(job_id),
+      batchNum,
+      session
+    );
+    const highest = (getHighestItemId(items) + 1).toString();
+    const newTableRow = {
+      ...newRow,
+      Item_id: highest,
+      job_id: job_id,
+      batch_number: batchNum,
+      created_date: new Date(),
+      budget_currency: project.currency_code,
+      budget_exchange_rate: parseFloat("1"),
+      actual_value: parseFloat("0"),
+      budget_value: parseFloat("0"),
+      client_value: parseFloat("0"),
+      item_status:
+        batch.batch_status === "BB"
+          ? "IB"
+          : batch.batch_status === "BD"
+          ? "ID"
+          : "UN",
+    };
+
+    if (kind === "primary") {
+      newTableRow.group_number = highest;
+      newTableRow.group_sequence = "1";
+      addRow(newTableRow, session); //DB POST api call
+    } else if (kind === "secondary") {
+      if (selectedRow) {
+        const groupNumRows = tableData.filter(
+          (row) => row.group_number === selectedRow.group_number
+        );
+        const highestGroupSeq = groupNumRows.length + 1;
+        newTableRow.group_sequence = highestGroupSeq.toString();
+        newTableRow.group_number = selectedRow.group_number;
+        addRow(newTableRow, session);
+      }
+    } else if (kind === "tertiary") {
+      if (selectedRow) {
+        const groupNumRows = tableData.filter(
+          (row) => row.group_number === selectedRow.group_number
+        );
+
+        // Find the highest group sequence in this group
+        const highestGroupSeq =
+          groupNumRows.length > 0
+            ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence)))
+            : 0;
+
+        const newGroupSeq = highestGroupSeq < 101 ? 101 : highestGroupSeq + 1;
+        newTableRow.group_sequence = newGroupSeq.toString();
+        newTableRow.group_number = selectedRow.group_number;
+        addRow(newTableRow, session); // Add the new tertiary row to the database
+      }
+    }
+  };
+
+
+*/
