@@ -9,12 +9,18 @@ import { SortingFn, sortingFns } from "@tanstack/react-table";
 import { compareItems } from "@tanstack/match-sorter-utils";
 import { useSession } from "next-auth/react";
 
+// --
+interface LockCellRendererProps {
+  getValue: () => any; // replace 'any' with the actual type
+  row: { index: number; original: { item_status: string } };
+  column: { id: string };
+  table: any; // replace 'any' with the actual type of 'table'
+}
 interface idCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
 
   fun: () => any; // replace 'any' with the actual type of 'table'
 }
-
 interface Column {
   id: string;
   getIsVisible: () => boolean;
@@ -24,15 +30,124 @@ interface Column {
 export interface Table {
   getAllLeafColumns: () => Column[];
 }
-
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
   row: { index: number; original: ProjectItems };
   column: { id: string };
   table: any; // replace 'any' with the actual type of 'table'
 }
-// `customCellRenderer` is a function component that renders a custom cell.
-// It manages the cell's value and editable state, and handles blur and focus events.
+
+interface TableItem {
+  group_number: string;
+  group_sequence: string;
+}
+
+//-------------------------------------------------------------Top Menu Functions-------------------------------------------------------------
+
+export const calculateHighestGroupSeq = (data, actualRow) => {
+  const groupNumRows = data.filter(
+    (row) => row.group_number === actualRow.group_number
+  );
+  console.log("number of rows", groupNumRows.length);
+  const highestGroupSeq = groupNumRows.length + 1;
+  console.log("highest group seq", highestGroupSeq);
+  return highestGroupSeq;
+};
+
+export const fetchTableData = async (
+  id: number,
+  batchNumber: string,
+  session: Session | null
+) => {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/items/tabledata/${id}/${batchNumber}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const { project, batch, items } = data;
+      // Now you can use project, batch, and items
+      return { project, batch, items };
+    } else {
+      console.error("Failed to fetch table data");
+    }
+  } catch (error) {
+    console.error("Error fetching table data:", error);
+  }
+};
+export const getHighestItemId = (items) => {
+  let highest = 0;
+  if (Array.isArray(items)) {
+    items.forEach((item) => {
+      if (parseInt(item.Item_id) > highest) {
+        highest = parseInt(item.Item_id);
+      }
+    });
+  } else {
+    console.error("Error: items is not an array", items);
+  }
+  return highest;
+};
+
+//-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
+
+export const addRow = async (
+  newRow: ProjectItemsWithSelect,
+  session: Session | null
+) => {
+  const { select, ...restOfNewRow } = newRow;
+
+  try {
+    const response = await fetch(`http://localhost:3000/items`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify(restOfNewRow),
+    });
+
+    if (response.ok) {
+      console.log("Row added successfully");
+    } else {
+      console.error("Failed to add row");
+    }
+  } catch (error) {
+    console.error("Error adding row:", error);
+  }
+};
+
+export const deleteRow = async (itemId: string, session: Session | null) => {
+  console.log("calling endpoint");
+  try {
+    const response = await fetch(`http://localhost:3000/items/${itemId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+
+    if (response.ok) {
+      console.log("Row deleted successfully");
+    } else {
+      console.error("Failed to delete row");
+    }
+  } catch (error) {
+    console.error("Error deleting row:", error);
+  }
+};
+
+//-------------------------------------------------------------Cell Functions-------------------------------------------------------------
+
 export const customCellRenderer = ({
   row: { index, original },
   column: { id },
@@ -80,7 +195,6 @@ export const customCellRenderer = ({
   return (
     <input
       style={{
-        backgroundColor: index % 2 === 0 ? "white" : "#F3F4F6",
         outline: "none",
         borderRadius: "2px",
         border: isEditable ? "1px solid #4f85e1" : "1px solid transparent",
@@ -101,18 +215,20 @@ export const customCellRenderer = ({
 export const idCellRenderer = ({ getValue, fun }: idCellRendererProps) => {
   const initialValue = getValue();
   return (
-    <div className={`text-blue-600 cursor-pointer `} onClick={() => fun()}>
-      {initialValue}
+    <div onClick={(e) => e.stopPropagation()}>
+      <a
+        className="text-blue-600 cursor-pointer underline "
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          fun();
+        }}
+      >
+        {initialValue}
+      </a>
     </div>
   );
 };
-
-interface LockCellRendererProps {
-  getValue: () => any; // replace 'any' with the actual type
-  row: { index: number; original: { item_status: string } };
-  column: { id: string };
-  table: any; // replace 'any' with the actual type of 'table'
-}
 
 export const lockCellRenderer = ({
   row: { original },
@@ -130,7 +246,11 @@ export const lockCellRenderer = ({
       case "IOP":
         return "blue";
       case "IDT":
-        return "black"; // Changed this to return a color string instead of JSX
+        return "black";
+      case "ID":
+        return "white";
+      case "IB":
+        return "white"; // Changed this to return a color string instead of JSX
       default:
         return "orange";
     }
@@ -140,12 +260,10 @@ export const lockCellRenderer = ({
     setColor(getColorFromStatus(original.item_status));
   }, [original.item_status]);
 
-  if (original.item_status === "IB" || original.item_status === "ID") {
-    return null;
-  } else {
-    return <MdLock size={14} color={color} />;
-  }
+  return <MdLock size={14} color={color} />;
 };
+
+//-------------------------------------------------------------Column Functions-------------------------------------------------------------
 
 // `columnList` is a function component that renders a list of columns.
 export const columnList = (currTable) => {
@@ -167,16 +285,13 @@ export const columnList = (currTable) => {
 };
 
 // `columnBeingDragged` is a variable that holds the index of the column being dragged.
-// It's used in the drag and drop handlers to update the column order.
 let columnBeingDragged: number;
 
-// `onDragStart` is a handler for the drag start event.
 // It sets `columnBeingDragged` to the index of the column being dragged.
 export const onDragStart = (e) => {
   columnBeingDragged = Number(e.currentTarget.dataset.columnIndex);
 };
 
-// `onDrop` is a handler for the drop event.
 // It updates the column order based on the drop position.
 export const onDrop = (e: React.DragEvent, table: any) => {
   e.preventDefault();
@@ -192,7 +307,6 @@ export const onDrop = (e: React.DragEvent, table: any) => {
 };
 
 // `useSkipper` is a custom hook that provides a way to skip a pagination reset temporarily.
-// It returns a boolean indicating whether to skip and a function to set skip to false.
 export const useSkipper = (): [boolean, () => void] => {
   const shouldSkipRef = useRef<boolean>(true);
   const shouldSkip = shouldSkipRef.current;
@@ -210,7 +324,6 @@ export const useSkipper = (): [boolean, () => void] => {
 };
 
 // `countKeys` is a function that counts the unique keys in an array of objects.
-// It uses `reduce` and `forEach` to iterate over the objects and keys.
 export const countKeys = (arr: Record<string, unknown>[]): number => {
   const temp = arr.reduce((count: string[], item: Record<string, unknown>) => {
     Object.keys(item).forEach((key: string) => {
@@ -222,7 +335,28 @@ export const countKeys = (arr: Record<string, unknown>[]): number => {
   }, []).length;
   return temp;
 };
+// fuzzySort is a sorting function that sorts by rank first, then alphanumeric
+export const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
+  let dir = 0;
 
+  // Only sort by rank if the column has ranking information
+  if (rowA.columnFiltersMeta[columnId]) {
+    dir = compareItems(
+      rowA.columnFiltersMeta[columnId]?.itemRank!,
+      rowB.columnFiltersMeta[columnId]?.itemRank!
+    );
+  }
+
+  // Provide an alphanumeric fallback for when the item ranks are equal
+  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
+};
+
+export const up = (
+  <MdKeyboardArrowDown className="text-white cursor-pointer z-40" size={18} />
+);
+export const down = (
+  <MdKeyboardArrowUp className="text-white cursor-pointer z-40" size={18} />
+);
 //create a new items row
 export const newRow: ProjectItemsWithSelect = {
   select: false,
@@ -279,60 +413,10 @@ export const newRow: ProjectItemsWithSelect = {
   modified_date: null,
 };
 
-interface TableItem {
-  group_number: string;
-  group_sequence: string;
-}
-
-export const getHighestGroupSeq = (
-  table: TableItem[],
-  groupNum: string
-): number => {
-  let highestGroupSeq = 0;
-  for (const item of table) {
-    if (item.group_number === groupNum) {
-      const groupSeq = parseInt(item.group_sequence);
-      if (groupSeq > highestGroupSeq) {
-        highestGroupSeq = groupSeq;
-      }
-    }
-  }
-  return highestGroupSeq + 1;
-};
-
-interface DataRow {
-  Item_id: string;
-}
-
-export const highestId = (data: DataRow[]): number => {
-  let highestId = 0;
-  data.forEach((row) => {
-    const itemId = parseInt(row.Item_id, 10);
-    if (!isNaN(itemId) && itemId > highestId) {
-      highestId = itemId;
-    }
+export const sortTableData = (data: ProjectItems[]) => {
+  return [...data].sort((a, b) => {
+    if (a.group_number < b.group_number) return -1;
+    if (a.group_number > b.group_number) return 1;
+    return Number(a.group_sequence) - Number(b.group_sequence);
   });
-  return highestId;
-};
-
-export const up = (
-  <MdKeyboardArrowDown className="text-white cursor-pointer z-40" size={18} />
-);
-export const down = (
-  <MdKeyboardArrowUp className="text-white cursor-pointer z-40" size={18} />
-);
-
-export const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
-  let dir = 0;
-
-  // Only sort by rank if the column has ranking information
-  if (rowA.columnFiltersMeta[columnId]) {
-    dir = compareItems(
-      rowA.columnFiltersMeta[columnId]?.itemRank!,
-      rowB.columnFiltersMeta[columnId]?.itemRank!
-    );
-  }
-
-  // Provide an alphanumeric fallback for when the item ranks are equal
-  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
 };

@@ -58,7 +58,7 @@ export const AddButton: FC<AddButtonProps> = ({
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute top-6 left-1 mt-2 border border-primary-menu bg-white rounded shadow-lg z-50"
+          className="absolute border border-primary-menu bg-white rounded shadow-lg z-50 left-24 top-10"
         >
           <div
             className="cursor-pointer py-2 px-4 hover:bg-gray-100 hover:rounded-t text-dark-blue"
