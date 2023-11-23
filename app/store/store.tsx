@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { ProjectProjects } from "../types";
 
 type ProjectState = {
   jobId: string | null;
@@ -21,6 +22,10 @@ type TableOptionsState = {
   setGroupSequence: (sequence: number[]) => void;
   setPrimaryRow: (value: any | null) => void;
 };
+export type ProjectStore = {
+  projectInfo: ProjectProjects | null;
+  setProjectInfo: (info: ProjectProjects | null) => void;
+};
 
 export const useStore = create<ProjectState>((set) => ({
   jobId: null,
@@ -42,4 +47,9 @@ export const useOptionStore = create<TableOptionsState>((set) => ({
   setGroupNumber: (value: string) => set({ groupNumber: value }),
   setGroupSequence: (value: any[]) => set({ groupSequence: value }),
   setPrimaryRow: (value: any | null) => set({ primaryRow: value }),
+}));
+
+export const useProjectStore = create<ProjectStore>((set) => ({
+  projectInfo: null,
+  setProjectInfo: (info: ProjectProjects | null) => set({ projectInfo: info }),
 }));

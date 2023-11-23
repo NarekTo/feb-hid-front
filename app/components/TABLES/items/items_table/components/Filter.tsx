@@ -88,8 +88,8 @@ export const Filter = React.memo(function Filter({
   return (
     <>
       <datalist id={column.id + "list"}>
-        {sortedUniqueValues.slice(0, 5000).map((value: any) => (
-          <option value={value} key={value} />
+        {sortedUniqueValues.slice(0, 5000).map((value: any, index: number) => (
+          <option value={value} key={index} />
         ))}
       </datalist>
       <DebouncedInput

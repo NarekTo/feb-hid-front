@@ -13,42 +13,44 @@ import {
   Table,
   SortingState,
   ColumnFiltersState,
+  Row,
 } from "@tanstack/react-table";
 import {
+  addRow,
+  calculateHighestGroupSeq,
   customCellRenderer,
+  deleteRow,
   down,
+  fetchTableData,
   fuzzySort,
-  getHighestGroupSeq,
-  highestId,
+  getHighestItemId,
   idCellRenderer,
   lockCellRenderer,
   newRow,
   onDragStart,
   onDrop,
+  sortTableData,
   up,
   useSkipper,
 } from "./functions/items_table_fns";
 import React, { useMemo, useRef, useState, useEffect, useReducer } from "react";
 import { ProjectItems, Session } from "../../../../types";
 import { useOptionStore } from "../../../../store/store";
-import {
-  IconWithDescription,
-  IconWithDescriptionDD,
-} from "../../../UI_ATOMS/IconWithDescription";
-import { MdDelete, MdAdd, MdArrowOutward } from "react-icons/md";
+import { IconWithDescription } from "../../../UI_ATOMS/IconWithDescription";
+import { MdDelete, MdArrowOutward } from "react-icons/md";
 import { HiOutlineDuplicate } from "react-icons/hi";
 import { BiExport, BiHide } from "react-icons/bi";
-import { ContextMenu } from "./components/ContextMenu";
+import { ContextMenu } from "./components/topMenu/ContextMenu";
 import { fuzzyFilter } from "./components/Filter";
 import { Filter } from "./components/Filter";
 import { IndeterminateCheckbox } from "./components/IndeterminateCheckBox";
 import FilterIcon from "./components/FilterIcon";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-
 import { io } from "socket.io-client";
 import TopMenuButton from "./components/topMenu/TopMenuButton";
 import { AddButton } from "./components/topMenu/AddButton";
+import HideCheckBox from "./components/HideCheckBox";
 
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
@@ -72,14 +74,31 @@ export const ItemsTable = React.memo(function ItemsTable({
 }: ItemsTableProps<ProjectItems>) {
   const searchParams = useSearchParams();
   const { data: session } = useSession() as { data: Session | null };
-
   const router = useRouter();
-  const job_id = searchParams.get("job_id") as string;
   const [tableData, setTableData] = useState(useMemo(() => data, []));
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [rowSelection, setRowSelection] = useState({}); //object of booleans, selection throu checkbox, can be many rows or one
+  const [groupSequence, setGroupSequence] = useState<number[]>([]); //array of numbers, selection through click, can be many rows or one
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [filterInputKey, setFilterInputKey] = useState(0);
+  const [columnVisibility, setColumnVisibility] = useState({});
+  const [openingMenu, setOpeningMenu] = useState(false);
+  const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
+  const [clicked, setClicked] = useState(false);
+  const [points, setPoints] = useState({
+    x: 0,
+    y: 0,
+  });
+  const tableRef = useRef(null);
+  const virtualRef = useRef(null);
+  const job_id = searchParams.get("job_id") as string;
+
+  //------------------------------------ZUSTAND store
+  const selectedRow = useOptionStore((state) => state.selectedRow);
+  const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
 
   //------------------------------------COLUMNS
-  const [isFiltering, setIsFiltering] = useState(false);
-
   const columns: ColumnDef<ProjectItems>[] = useMemo(
     () => [
       {
@@ -154,16 +173,29 @@ export const ItemsTable = React.memo(function ItemsTable({
         accessorKey: "item_ref",
         cell: customCellRenderer,
       },
+
       {
-        id: "design_ref",
-        header: "Design ref",
-        accessorKey: "design_ref",
+        id: "group_number",
+        header: "Group number",
+        accessorKey: "group_number",
+        cell: customCellRenderer,
+      },
+      {
+        id: "group_sequence",
+        header: "Group sequence",
+        accessorKey: "group_sequence",
         cell: customCellRenderer,
       },
       {
         id: "item_status",
         header: "Item status",
         accessorKey: "item_status",
+        cell: customCellRenderer,
+      },
+      {
+        id: "design_ref",
+        header: "Design ref",
+        accessorKey: "design_ref",
         cell: customCellRenderer,
       },
       {
@@ -274,18 +306,7 @@ export const ItemsTable = React.memo(function ItemsTable({
         accessorKey: "client_value",
         cell: customCellRenderer,
       },
-      {
-        id: "group_number",
-        header: "Group number",
-        accessorKey: "group_number",
-        cell: customCellRenderer,
-      },
-      {
-        id: "group_sequence",
-        header: "Group sequence",
-        accessorKey: "group_sequence",
-        cell: customCellRenderer,
-      },
+
       {
         id: "package_code",
         header: "Package code",
@@ -434,44 +455,7 @@ export const ItemsTable = React.memo(function ItemsTable({
     [isFiltering]
   );
 
-  //------------------------------------zustand store
-  const rerender = useReducer(() => ({}), {})[1];
-  const selectedRow = useOptionStore((state) => state.selectedRow);
-  const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
-  const groupNumber = useOptionStore((state) => state.groupNumber);
-  const setGroupNumber = useOptionStore((state) => state.setGroupNumber);
-  const groupSequence = useOptionStore((state) => state.groupSequence);
-  const setGroupSequence = useOptionStore((state) => state.setGroupSequence);
-  const primaryRow = useOptionStore((state) => state.primaryRow);
-  const setPrimaryRow = useOptionStore((state) => state.setPrimaryRow);
-
-  //------------------------------------state
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [primaryRows, setPrimaryRows] = useState([]);
-  const [rowSelection, setRowSelection] = useState({});
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [filterInputKey, setFilterInputKey] = useState(0);
-  const [columnVisibility, setColumnVisibility] = useState({});
-
-  const [openingMenu, setOpeningMenu] = useState(false);
-  const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
-  const [clicked, setClicked] = useState(false);
-  const [points, setPoints] = useState({
-    x: 0,
-    y: 0,
-  });
-  const tableRef = useRef(null);
-  const virtualRef = useRef(null);
-
-  const clearAllFilters = () => {
-    const toggleFiltering = () => setIsFiltering((prevState) => !prevState);
-    table.resetColumnFilters(true);
-    table.resetGlobalFilter(true);
-    toggleFiltering();
-    setFilterInputKey((prevKey) => prevKey + 1);
-  };
-
-  //----------------------------------------TABLE
+  //------------------------------------TABLE
   const table = useReactTable({
     data: tableData,
     columns,
@@ -522,9 +506,16 @@ export const ItemsTable = React.memo(function ItemsTable({
     // debugTable: true,
   });
 
-  //----------------------------------------functions
+  //------------------------------------FUNCTIONS
 
-  //this is to open the single item page
+  const clearAllFilters = () => {
+    const toggleFiltering = () => setIsFiltering((prevState) => !prevState);
+    table.resetColumnFilters(true);
+    table.resetGlobalFilter(true);
+    toggleFiltering();
+    setFilterInputKey((prevKey) => prevKey + 1);
+  };
+
   const handleItemClick = (itemId: number) => {
     const item = itemId.toString();
     const jobId = job_id.trim();
@@ -539,127 +530,122 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handleOpening = () => {
     setOpeningMenu(!openingMenu);
   };
+  const handleAdd = async (
+    kind: "primary" | "secondary" | "tertiary"
+  ): Promise<void> => {
+    const { project, batch, items } = await fetchTableData(
+      Number(job_id),
+      batchNum,
+      session
+    );
+    const highest = (getHighestItemId(items) + 1).toString();
 
-  const handleAdd = (kind: "primary" | "secondary" | "tertiary"): void => {
-    const { setGroupNumber, setGroupSequence, setPrimaryRow, setSelectedRow } =
-      useOptionStore();
-    const newTableRow = { ...newRow };
-    const highest = (highestId(data) + 1).toString();
+    const newTableRow = {
+      ...newRow,
+      Item_id: highest,
+      job_id: job_id,
+      batch_number: batchNum,
+      created_date: new Date(),
+      budget_currency: project.currency_code,
+      budget_exchange_rate: parseFloat("1"),
+      actual_value: parseFloat("0"),
+      budget_value: parseFloat("0"),
+      client_value: parseFloat("0"),
+      item_status:
+        batch.batch_status === "BB"
+          ? "IB"
+          : batch.batch_status === "BD"
+          ? "ID"
+          : "UN",
+    };
 
-    if (kind === "primary") {
-      newTableRow.Item_id = highest;
+    if (selectedRow) {
+      const groupNumRows = tableData.filter(
+        (row) => row.group_number === selectedRow.group_number
+      );
+      const highestGroupSeq = groupNumRows.length + 1;
+      newTableRow.group_number = selectedRow.group_number;
+      newTableRow.location_code = selectedRow.location_code;
+
+      if (kind === "secondary") {
+        // Find all secondary rows in the same group as the selected row
+        const secondaryRows = groupNumRows.filter(
+          (row) => Number(row.group_sequence) < 101
+        );
+        const highestGroupSeq = secondaryRows.length + 1;
+        newTableRow.group_sequence = highestGroupSeq.toString();
+      } else if (kind === "tertiary") {
+        const highestGroupSeq =
+          groupNumRows.length > 0
+            ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence)))
+            : 0;
+
+        newTableRow.group_sequence = (
+          highestGroupSeq < 101 ? 101 : highestGroupSeq + 1
+        ).toString();
+      }
+    } else if (kind === "primary") {
       newTableRow.group_number = highest;
       newTableRow.group_sequence = "1";
-      setGroupNumber(highest);
-      setGroupSequence([1]);
-      setPrimaryRow(newTableRow); // Set the primary row in Recoil
-      setPrimaryRows((prevPrimaryRows) => [newTableRow, ...prevPrimaryRows]);
-      setTableData((prevData) => [newTableRow, ...prevData]); // Add the new primary row to the table data
-    } else if (kind === "secondary") {
-      // Check if a primary row is selected
-      if (selectedRow) {
-        const primaryRow = data.find(
-          (row) => row.Item_id === selectedRow.original.itemId
-        );
-        if (primaryRow) {
-          newTableRow.Item_id = highest;
-          newTableRow.group_number = primaryRow.group_number;
-          // Calculate the highest group sequence for the selected group number
-          const groupNumRows = data.filter(
-            (row) => row.group_number === primaryRow.group_number
-          );
-          const highestGroupSeq =
-            groupNumRows.length > 0
-              ? Math.max(
-                  ...groupNumRows.map((row) => Number(row.group_sequence))
-                )
-              : 0;
-
-          newTableRow.group_sequence = (highestGroupSeq + 1).toString();
-          // Insert the secondary row below the primary row
-          const newData = [...data];
-          const primaryIndex = newData.findIndex(
-            (row) => row.Item_id === primaryRow.Item_id
-          );
-          newData.splice(primaryIndex + 1, 0, newTableRow);
-          // Sort the rows by group number and group sequence
-          newData.sort((a, b) => {
-            if (a.group_number === b.group_number) {
-              return Number(a.group_sequence) - Number(b.group_sequence);
-            } else {
-              return a.group_number.localeCompare(b.group_number);
-            }
-          });
-          setTableData(newData);
-        }
-      }
-    } else if (kind === "tertiary") {
-      // Check if a primary row is selected
-      if (selectedRow) {
-        const primaryRow = data.find(
-          (row) => row.Inquiry_id === selectedRow.original.itemId
-        );
-        if (primaryRow) {
-          newTableRow.Item_id = highest;
-          newTableRow.group_number = primaryRow.group_number;
-
-          // Calculate the highest group sequence for the selected group number
-          const groupNumRows = data.filter(
-            (row) => row.group_number === primaryRow.group_number
-          );
-          const highestGroupSeq =
-            groupNumRows.length > 0
-              ? Math.max(
-                  ...groupNumRows.map((row) => Number(row.group_sequence))
-                )
-              : 0;
-
-          newTableRow.group_sequence = (
-            highestGroupSeq >= 100 ? highestGroupSeq + 1 : 101
-          ).toString();
-          // Insert the tertiary row below the primary row
-          const newData = [...data];
-          const primaryIndex = newData.findIndex(
-            (row) => row.Item_id === primaryRow.Item_id
-          );
-          newData.splice(primaryIndex + 1, 0, newTableRow);
-
-          // Sort the rows by group number and group sequence
-          newData.sort((a, b) => {
-            if (a.group_number === b.group_number) {
-              return Number(a.group_sequence) - Number(b.group_sequence);
-            } else {
-              return a.group_number.localeCompare(b.group_number);
-            }
-          });
-
-          setTableData(newData);
-        }
-      }
     }
+
+    addRow(newTableRow, session); //DB POST api call
   };
 
   const handleDelete = async () => {
-    if (rowSelection) {
-      const filteredData = data.filter((item, index) => !rowSelection[index]);
-      const updatedRowSelection = { ...rowSelection };
-      Object.keys(updatedRowSelection).forEach((index) => {
-        if (updatedRowSelection[index]) {
-          delete updatedRowSelection[index];
+    console.log("selectedRow from delete", selectedRow);
+    console.log("row selection", rowSelection);
+    if (selectedRow && "Item_id" in selectedRow) {
+      const itemId = selectedRow["Item_id"] as string;
+      try {
+        await deleteRow(itemId, session);
+      } catch (error) {
+        console.error("Failed to delete row", error);
+      }
+    } else if (Object.keys(rowSelection).length > 0) {
+      // Get the selected rows
+      const selectedRows = Object.entries(rowSelection)
+        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+        .map(([key]) => tableData[key]);
+
+      // Delete each selected row
+      for (const row of selectedRows) {
+        const itemId = row.Item_id;
+        try {
+          await deleteRow(itemId, session);
+        } catch (error) {
+          console.error("Failed to delete row", error);
         }
-      });
-      setTableData(filteredData);
-      setRowSelection(updatedRowSelection);
+      }
     }
-  };
-  const onRowClick = (row) => {
-    setPrimaryRow(row);
-    setSelectedRow(row);
-    setGroupNumber(row.original.group_number);
-    const highestGroupSeq = getHighestGroupSeq(data, row.original.group_number);
+    setRowSelection({});
   };
 
-  //----------------------------------------useEffects
+  const onRowClick = (row: Row<ProjectItems>) => {
+    setSelectedRow(null); // Deselect the row
+    const actualRow = row.original;
+    const isAnyRowSelected = Object.values(rowSelection).some(
+      (value) => value === true
+    );
+
+    if (!isAnyRowSelected) {
+      setSelectedRow(actualRow);
+      console.log("tableData", tableData);
+      console.log("highest", calculateHighestGroupSeq(tableData, actualRow));
+    }
+  };
+
+  const getRowStyles = (row: Row<ProjectItems>, index: number) => {
+    let rowStyles = {};
+    // Check if the row is selected by checkbox or by click
+    if (rowSelection[index] || row.original.Item_id === selectedRow?.Item_id) {
+      rowStyles = { backgroundColor: "#BDCCE5" }; // Color for selected row
+    } else {
+      rowStyles = {}; // Default styles for deselected row
+    }
+    return rowStyles;
+  };
+  //----------------------------------USE EFFECTS AND LISTENERS
   useEffect(() => {
     const columnFilters = table.getState().columnFilters;
     columnFilters.forEach((filter) => {
@@ -675,22 +661,21 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   useEffect(() => {
     const handleClick = () => setClicked(false);
-    // Handle outside click
     const handleOutsideClick = (event: MouseEvent) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
         setSelectedRow(null);
       }
     };
-    const socket = io("ws://localhost:3002");
+    document.addEventListener("click", handleOutsideClick);
+    window.addEventListener("click", handleClick);
 
+    const socket = io("ws://localhost:3002");
     socket.on("connect", () => {
       console.log("WebSocket connection opened");
     });
-
     socket.on("error", (error: Error | string) => {
       console.log("WebSocket error: ", error);
     });
-
     socket.on("itemUpdated", (updatedItem) => {
       console.log("Received updated item: ", updatedItem);
       // Trim all string values in the updated item
@@ -706,22 +691,40 @@ export const ItemsTable = React.memo(function ItemsTable({
         )
       );
     });
-    // Add event listeners
-    document.addEventListener("click", handleOutsideClick);
-    window.addEventListener("click", handleClick);
+    socket.on("itemDeleted", (deletedItem) => {
+      setTableData((prevItems) =>
+        prevItems.filter((item) => item.Item_id !== deletedItem.Item_id.trim())
+      );
+    });
+    socket.on("itemAdded", (addedItem) => {
+      let trimmedItem = { ...addedItem };
+      for (let key in trimmedItem) {
+        if (typeof trimmedItem[key] === "string") {
+          trimmedItem[key] = trimmedItem[key].trim();
+        }
+      }
+
+      setTableData((prevItems) => {
+        const updatedData = [trimmedItem, ...prevItems];
+        return sortTableData(updatedData);
+      });
+    });
+
+    const sortedData = [...data].sort((a, b) => {
+      if (a.group_number < b.group_number) return -1;
+      if (a.group_number > b.group_number) return 1;
+      return Number(a.group_sequence) - Number(b.group_sequence);
+    });
+
+    setTableData(sortedData);
+    console.log("sorted data", sortedData);
     // Cleanup function
     return () => {
       socket.close();
       document.removeEventListener("click", handleOutsideClick);
       window.removeEventListener("click", handleClick);
     };
-  }, []);
-
-  useEffect(() => {
-    setTableData(data);
   }, [data]);
-
-  //----------------------------------------FILTEEEEEEER
 
   return (
     <div ref={tableRef}>
@@ -763,20 +766,9 @@ export const ItemsTable = React.memo(function ItemsTable({
           />
         </div>
         {openingMenu && (
-          <div className="flex bg-white w-full p-2 text-xs shadow-lg mt-9 rounded-md">
+          <div className="flex w-full p-2 text-xs shadow-lg mt-12 rounded-md bg-slate-100">
             {table.getAllLeafColumns().map((column) => {
-              return (
-                <div key={column.id} className="px-1">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={column.getIsVisible()}
-                      onChange={column.getToggleVisibilityHandler()}
-                    />
-                    {column.id}
-                  </label>
-                </div>
-              );
+              return <HideCheckBox column={column} key={column.id} />;
             })}
           </div>
         )}
@@ -842,16 +834,14 @@ export const ItemsTable = React.memo(function ItemsTable({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => {
-              const isRowSelected = selectedRow && selectedRow.id === row.id;
-              const rowStyles = isRowSelected
-                ? { backgroundColor: "#BDCCE5" }
-                : {};
+            {table.getRowModel().rows.map((row, index) => {
+              const rowStyles = getRowStyles(row, index);
+
               return (
                 <tr
                   onClick={() => onRowClick(row)}
                   key={row.id}
-                  className="font-normal border-b even:bg-gray-100 odd:bg-white"
+                  className="font-normal border-b "
                 >
                   {row.getVisibleCells().map((cell, index) => {
                     const cellContext = cell.getContext();
@@ -892,3 +882,71 @@ export const ItemsTable = React.memo(function ItemsTable({
     </div>
   );
 });
+
+/*
+
+  const handleAdd = async (
+    kind: "primary" | "secondary" | "tertiary"
+  ): Promise<void> => {
+    const { project, batch, items } = await fetchTableData(
+      //i made an endpoint specifically to get all this data in one call
+      Number(job_id),
+      batchNum,
+      session
+    );
+    const highest = (getHighestItemId(items) + 1).toString();
+    const newTableRow = {
+      ...newRow,
+      Item_id: highest,
+      job_id: job_id,
+      batch_number: batchNum,
+      created_date: new Date(),
+      budget_currency: project.currency_code,
+      budget_exchange_rate: parseFloat("1"),
+      actual_value: parseFloat("0"),
+      budget_value: parseFloat("0"),
+      client_value: parseFloat("0"),
+      item_status:
+        batch.batch_status === "BB"
+          ? "IB"
+          : batch.batch_status === "BD"
+          ? "ID"
+          : "UN",
+    };
+
+    if (kind === "primary") {
+      newTableRow.group_number = highest;
+      newTableRow.group_sequence = "1";
+      addRow(newTableRow, session); //DB POST api call
+    } else if (kind === "secondary") {
+      if (selectedRow) {
+        const groupNumRows = tableData.filter(
+          (row) => row.group_number === selectedRow.group_number
+        );
+        const highestGroupSeq = groupNumRows.length + 1;
+        newTableRow.group_sequence = highestGroupSeq.toString();
+        newTableRow.group_number = selectedRow.group_number;
+        addRow(newTableRow, session);
+      }
+    } else if (kind === "tertiary") {
+      if (selectedRow) {
+        const groupNumRows = tableData.filter(
+          (row) => row.group_number === selectedRow.group_number
+        );
+
+        // Find the highest group sequence in this group
+        const highestGroupSeq =
+          groupNumRows.length > 0
+            ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence)))
+            : 0;
+
+        const newGroupSeq = highestGroupSeq < 101 ? 101 : highestGroupSeq + 1;
+        newTableRow.group_sequence = newGroupSeq.toString();
+        newTableRow.group_number = selectedRow.group_number;
+        addRow(newTableRow, session); // Add the new tertiary row to the database
+      }
+    }
+  };
+
+
+*/
