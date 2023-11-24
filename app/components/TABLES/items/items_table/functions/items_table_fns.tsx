@@ -26,10 +26,6 @@ interface Column {
   getIsVisible: () => boolean;
   getToggleVisibilityHandler: () => () => void;
 }
-
-export interface Table {
-  getAllLeafColumns: () => Column[];
-}
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
   row: { index: number; original: ProjectItems };
@@ -37,14 +33,12 @@ interface CustomCellRendererProps {
   table: any; // replace 'any' with the actual type of 'table'
 }
 
-interface TableItem {
-  group_number: string;
-  group_sequence: string;
-}
+//-----------------------------------------------calculations ofr adding and sorting rows-------------------------------------------------------------
 
-//-------------------------------------------------------------Top Menu Functions-------------------------------------------------------------
-
-export const calculateHighestGroupSeq = (data, actualRow) => {
+export const calculateHighestGroupSeq = (
+  data: ProjectItems[],
+  actualRow: ProjectItems
+) => {
   const groupNumRows = data.filter(
     (row) => row.group_number === actualRow.group_number
   );
@@ -53,6 +47,29 @@ export const calculateHighestGroupSeq = (data, actualRow) => {
   console.log("highest group seq", highestGroupSeq);
   return highestGroupSeq;
 };
+export const getHighestItemId = (items: ProjectItems[]) => {
+  let highest = 0;
+  if (Array.isArray(items)) {
+    items.forEach((item) => {
+      if (parseInt(item.Item_id) > highest) {
+        highest = parseInt(item.Item_id);
+      }
+    });
+  } else {
+    console.error("Error: items is not an array", items);
+  }
+  return highest;
+};
+
+export const sortTableData = (data: ProjectItems[]) => {
+  return [...data].sort((a, b) => {
+    if (a.group_number < b.group_number) return -1;
+    if (a.group_number > b.group_number) return 1;
+    return Number(a.group_sequence) - Number(b.group_sequence);
+  });
+};
+
+//-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
 
 export const fetchTableData = async (
   id: number,
@@ -83,21 +100,6 @@ export const fetchTableData = async (
     console.error("Error fetching table data:", error);
   }
 };
-export const getHighestItemId = (items) => {
-  let highest = 0;
-  if (Array.isArray(items)) {
-    items.forEach((item) => {
-      if (parseInt(item.Item_id) > highest) {
-        highest = parseInt(item.Item_id);
-      }
-    });
-  } else {
-    console.error("Error: items is not an array", items);
-  }
-  return highest;
-};
-
-//-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
 
 export const addRow = async (
   newRow: ProjectItemsWithSelect,
@@ -124,7 +126,7 @@ export const addRow = async (
     console.error("Error adding row:", error);
   }
 };
-
+//real delete from sql
 export const deleteRow = async (itemId: string, session: Session | null) => {
   console.log("calling endpoint");
   try {
@@ -145,7 +147,63 @@ export const deleteRow = async (itemId: string, session: Session | null) => {
     console.error("Error deleting row:", error);
   }
 };
+//delete as in changing status to deleted
+export const changeRowStatus = async (
+  itemId: string,
+  status: string,
+  session: Session
+) => {
+  try {
+    // Send a PUT request to your backend to update the status of the item
+    const response = await fetch(`http://localhost:3000/items/${itemId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      // Send the item_status as a property of an object in the request body
+      body: JSON.stringify({ item_status: status }),
+    });
 
+    if (response.ok) {
+      console.log("Item status updated successfully");
+    } else {
+      console.error("Failed to update item status");
+    }
+  } catch (error) {
+    // Handle error if the update fails
+    console.error("Error updating item status:", error);
+  }
+};
+//update item row
+export const updateItem = async (
+  Item_id: string,
+  field: string,
+  value: any,
+  session: Session | null
+) => {
+  try {
+    const response = await fetch(`http://localhost:3000/items/${Item_id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify({ [field]: value }),
+    });
+
+    if (response.ok) {
+      console.log("Item updated successfully");
+      return true;
+    } else {
+      console.error("Failed to update item");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error updating data:", error);
+    return false;
+  }
+};
 //-------------------------------------------------------------Cell Functions-------------------------------------------------------------
 
 export const customCellRenderer = ({
@@ -160,26 +218,9 @@ export const customCellRenderer = ({
   const Item_id = original.Item_id;
   const onBlur = async () => {
     if (value !== initialValue) {
-      try {
-        // Send a PUT request to your backend to update the item
-        const response = await fetch(`http://localhost:3000/items/${Item_id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-          body: JSON.stringify({ [id]: value }), // Update the field with the new value
-        });
-
-        if (response.ok) {
-          console.log("Item updated successfully");
-          setValue(value);
-        } else {
-          console.error("Failed to update item");
-        }
-      } catch (error) {
-        // Handle error if the update fails
-        console.error("Error updating data:", error);
+      const success = await updateItem(Item_id, id, value, session);
+      if (success) {
+        setValue(value);
       }
     }
     setIsEditable(false);
@@ -266,7 +307,9 @@ export const lockCellRenderer = ({
 //-------------------------------------------------------------Column Functions-------------------------------------------------------------
 
 // `columnList` is a function component that renders a list of columns.
-export const columnList = (currTable) => {
+export const columnList = (currTable: {
+  getAllLeafColumns: () => Column[];
+}) => {
   return currTable.getAllLeafColumns().map((column: Column) => {
     console.log("column", column.getIsVisible);
     return (
@@ -411,12 +454,4 @@ export const newRow: ProjectItemsWithSelect = {
   supplier_notes: "",
   created_date: null,
   modified_date: null,
-};
-
-export const sortTableData = (data: ProjectItems[]) => {
-  return [...data].sort((a, b) => {
-    if (a.group_number < b.group_number) return -1;
-    if (a.group_number > b.group_number) return 1;
-    return Number(a.group_sequence) - Number(b.group_sequence);
-  });
 };

@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import MainTableCrud from "../../../../components/TABLES/MainTableCrud";
 import { useSearchParams } from "next/navigation";
 import TitleHeader from "../../../../components/UI_SECTIONS/page/TitleHeader";
 import Message from "../../../../components/UI_ATOMS/Message";
 import { ProjectItems } from "../../../../types";
 import { ItemsTable } from "../../../../components/TABLES/items/items_table/ItemsTable";
+import { transformItems } from "../../../../utils/constants";
 
 export interface ItemsProps {
   items: ProjectItems[];
@@ -18,16 +18,9 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
 
   const [tableItems, setTableItems] = useState<ProjectItems[]>(items);
 
+  // in the useEffect the data is being transformed to remove any white spaces
   useEffect(() => {
-    const transformedItems = items.map((item) => {
-      const newItem = { ...item };
-      for (const key in newItem) {
-        if (typeof newItem[key] === "string") {
-          newItem[key] = newItem[key].trim();
-        }
-      }
-      return newItem;
-    });
+    const transformedItems = transformItems(items);
     setTableItems(transformedItems);
   }, [items]);
 
@@ -57,20 +50,3 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
 };
 
 export default ItemList;
-
-/*
- {tableItems && tableItems.length > 0 ? (
-        <>
-          <MainTableCrud
-            project={name}
-            tableItems={tableItems}
-            setTableItems={setTableItems}
-            batchNum={batchNum}
-          />
-          <ItemsTable data={tableItems} />
-        </>
-      ) : (
-        <Message title="No Items" message="There are no items in this batch" />
-      )}
-
-*/
