@@ -126,33 +126,14 @@ export const addRow = async (
     console.error("Error adding row:", error);
   }
 };
-//real delete from sql
-export const deleteRow = async (itemId: string, session: Session | null) => {
-  console.log("calling endpoint");
-  try {
-    const response = await fetch(`http://localhost:3000/items/${itemId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-    });
 
-    if (response.ok) {
-      console.log("Row deleted successfully");
-    } else {
-      console.error("Failed to delete row");
-    }
-  } catch (error) {
-    console.error("Error deleting row:", error);
-  }
-};
-//delete as in changing status to deleted
 export const changeRowStatus = async (
   itemId: string,
   status: string,
   session: Session
 ) => {
+  console.log("Session token:", session.accessToken); // Log the session token
+
   try {
     // Send a PUT request to your backend to update the status of the item
     const response = await fetch(`http://localhost:3000/items/${itemId}`, {
@@ -161,8 +142,7 @@ export const changeRowStatus = async (
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.accessToken}`,
       },
-      // Send the item_status as a property of an object in the request body
-      body: JSON.stringify({ item_status: status }),
+      body: JSON.stringify({ item_status: status }), // Update the item_status field with the new status
     });
 
     if (response.ok) {
@@ -173,35 +153,6 @@ export const changeRowStatus = async (
   } catch (error) {
     // Handle error if the update fails
     console.error("Error updating item status:", error);
-  }
-};
-//update item row
-export const updateItem = async (
-  Item_id: string,
-  field: string,
-  value: any,
-  session: Session | null
-) => {
-  try {
-    const response = await fetch(`http://localhost:3000/items/${Item_id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-      body: JSON.stringify({ [field]: value }),
-    });
-
-    if (response.ok) {
-      console.log("Item updated successfully");
-      return true;
-    } else {
-      console.error("Failed to update item");
-      return false;
-    }
-  } catch (error) {
-    console.error("Error updating data:", error);
-    return false;
   }
 };
 //-------------------------------------------------------------Cell Functions-------------------------------------------------------------
@@ -218,9 +169,26 @@ export const customCellRenderer = ({
   const Item_id = original.Item_id;
   const onBlur = async () => {
     if (value !== initialValue) {
-      const success = await updateItem(Item_id, id, value, session);
-      if (success) {
-        setValue(value);
+      try {
+        // Send a PUT request to your backend to update the item
+        const response = await fetch(`http://localhost:3000/items/${Item_id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify({ [id]: value }), // Update the field with the new value
+        });
+
+        if (response.ok) {
+          console.log("Item updated successfully");
+          setValue(value);
+        } else {
+          console.error("Failed to update item");
+        }
+      } catch (error) {
+        // Handle error if the update fails
+        console.error("Error updating data:", error);
       }
     }
     setIsEditable(false);
@@ -253,6 +221,7 @@ export const customCellRenderer = ({
     />
   );
 };
+
 export const idCellRenderer = ({ getValue, fun }: idCellRendererProps) => {
   const initialValue = getValue();
   return (
@@ -454,4 +423,27 @@ export const newRow: ProjectItemsWithSelect = {
   supplier_notes: "",
   created_date: null,
   modified_date: null,
+};
+
+// old real delete row function
+
+export const deleteRow = async (itemId: string, session: Session | null) => {
+  console.log("calling endpoint");
+  try {
+    const response = await fetch(`http://localhost:3000/items/${itemId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+
+    if (response.ok) {
+      console.log("Row deleted successfully");
+    } else {
+      console.error("Failed to delete row");
+    }
+  } catch (error) {
+    console.error("Error deleting row:", error);
+  }
 };

@@ -20,7 +20,6 @@ import {
   calculateHighestGroupSeq,
   changeRowStatus,
   customCellRenderer,
-  deleteRow,
   down,
   fetchTableData,
   fuzzySort,
@@ -544,7 +543,6 @@ export const ItemsTable = React.memo(function ItemsTable({
       const groupNumRows = tableData.filter(
         (row) => row.group_number === selectedRow.group_number
       );
-      const highestGroupSeq = groupNumRows.length + 1;
       newTableRow.group_number = selectedRow.group_number;
       newTableRow.location_code = selectedRow.location_code;
 
@@ -573,7 +571,10 @@ export const ItemsTable = React.memo(function ItemsTable({
     addRow(newTableRow, session); //DB POST api call
   };
   const handleDelete = () => {
-    if (selectedRow && "Item_id" in selectedRow) {
+    if (
+      (selectedRow && "Item_id" in selectedRow) ||
+      Object.keys(rowSelection).length > 0
+    ) {
       setShowModal(true);
     }
   };
@@ -581,12 +582,30 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handleConfirmDelete = async () => {
     if (selectedRow) {
       try {
+        console.log("session", session);
+        console.log("selectedRow item ID", selectedRow.Item_id);
         // Change the status to 'IZ'
         await changeRowStatus(selectedRow.Item_id, "IZ", session);
       } catch (error) {
         console.error("Failed to update item status", error);
       }
+    } else if (Object.keys(rowSelection).length > 0) {
+      // Get the selected rows
+      const selectedRows = Object.entries(rowSelection)
+        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+        .map(([key]) => tableData[key]);
+
+      // Change status of each selected row
+      for (const row of selectedRows) {
+        const itemId = row.Item_id;
+        try {
+          await changeRowStatus(itemId, "IZ", session);
+        } catch (error) {
+          console.error("Failed to change row status", error);
+        }
+      }
     }
+    setRowSelection({});
     setShowModal(false);
   };
 
@@ -602,14 +621,8 @@ export const ItemsTable = React.memo(function ItemsTable({
     const isAnyRowSelected = Object.values(rowSelection).some(
       (value) => value === true
     );
-    console.log("onCLICK SELECT rowSelection", rowSelection);
     if (!isAnyRowSelected) {
       setSelectedRow(actualRow);
-      console.log("onCLICK tableData", tableData);
-      console.log(
-        "onCLICK highest next row",
-        calculateHighestGroupSeq(tableData, actualRow)
-      );
     }
   };
 
@@ -727,8 +740,14 @@ export const ItemsTable = React.memo(function ItemsTable({
     });
 
     setTableData(sortedData);
-    console.log("sorted data", sortedData);
+
+    // Get the selected rows
+    const selected = Object.entries(rowSelection)
+      .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+      .map(([key]) => tableData[key]);
+
     // Cleanup function
+    console.log("rows selection", selected);
     return () => {
       socket.close();
       document.removeEventListener("click", handleOutsideClick);
@@ -740,7 +759,16 @@ export const ItemsTable = React.memo(function ItemsTable({
     <div ref={tableRef}>
       <Modal
         isOpen={showModal}
-        text={`Are you sure you want to delete the row number ${selectedRow?.Item_id}?`}
+        text={`Are you sure you want to delete the row${
+          Object.keys(rowSelection).length > 0 && "s"
+        } number ${
+          selectedRow
+            ? selectedRow.Item_id
+            : Object.keys(rowSelection)
+                .filter((key) => rowSelection[key])
+                .map((key) => tableData[key].Item_id)
+                .join(", ")
+        }?`}
         button1Text="Yes"
         button1Action={handleConfirmDelete}
         button2Text="No"

@@ -10,20 +10,25 @@ interface ItemsParam {
 }
 
 const getData = async (batch: string) => {
-  const session = (await getServerSession(options)) as Session;
+  try {
+    const session = (await getServerSession(options)) as Session;
 
-  const res = await fetch(`http://localhost:3000/items/batch/${batch}`, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${session.accessToken}`, // Include the JWT token here
-    },
-  });
+    const res = await fetch(`http://localhost:3000/items/batch/${batch}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${session.accessToken}`, // Include the JWT token here
+      },
+    });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    if (!res.ok) {
+      throw new Error(`Failed to fetch data. HTTP status: ${res.status}`);
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error;
   }
-
-  return res.json();
 };
 
 const Items: React.FC<ItemsParam> = async ({ params }) => {
