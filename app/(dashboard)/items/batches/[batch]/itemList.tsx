@@ -33,18 +33,13 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
         secondValue={batchNum}
         thirdLabel="Items List"
       />
-      {tableItems && tableItems.length > 0 ? (
-        <>
-          <ItemsTable
-            data={tableItems}
-            setTableItems={setTableItems}
-            project={name}
-            batchNum={batchNum}
-          />
-        </>
-      ) : (
-        <Message title="No Items" message="There are no items in this batch" />
-      )}
+
+      <ItemsTable
+        data={tableItems}
+        setTableItems={setTableItems}
+        project={name}
+        batchNum={batchNum}
+      />
     </div>
   );
 };
