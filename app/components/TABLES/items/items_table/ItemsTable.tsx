@@ -92,6 +92,13 @@ export const ItemsTable = React.memo(function ItemsTable({
     x: 0,
     y: 0,
   });
+  const [modalConfig, setModalConfig] = useState({
+    text: "",
+    button1Text: "",
+    button1Action: () => {},
+    button2Text: "",
+    button2Action: () => {},
+  });
   const tableRef = useRef(null);
   const virtualRef = useRef(null);
   const job_id = searchParams.get("job_id") as string;
@@ -573,10 +580,57 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleDelete = () => {
+    const sameGroupRows = tableData.filter(
+      (row) => row.group_number === selectedRow.group_number
+    );
+    console.log("same group rows", sameGroupRows.length);
     if (
       (selectedRow && "Item_id" in selectedRow) ||
       Object.keys(rowSelection).length > 0
     ) {
+      // Check if the selected row's group sequence is 1
+      if (selectedRow.group_sequence === "1") {
+        // Get all rows with the same group number
+
+        // If there are other rows in the same group, prevent deletion
+        if (sameGroupRows.length > 1) {
+          setModalConfig({
+            text: "Cannot delete item with group sequence 1 if there are other items in the same group",
+            button1Text: "OK",
+            button1Action: () => setShowModal(false),
+            button2Text: "",
+            button2Action: () => {},
+          });
+        } else {
+          // If it's a singleton, ask for confirmation before deletion
+          setModalConfig({
+            text: `Are you sure you want to delete the item ${selectedRow.Item_id}?`,
+            button1Text: "Yes",
+            button1Action: handleConfirmDelete,
+            button2Text: "No",
+            button2Action: handleCancelDelete,
+          });
+        }
+      } else {
+        // If group sequence is not 1, ask for confirmation before deletion
+        setModalConfig({
+          text: `Are you sure you want to delete the item${
+            Object.keys(rowSelection).length > 1 ? "s" : ""
+          } number ${
+            selectedRow
+              ? selectedRow.Item_id
+              : Object.keys(rowSelection)
+                  .filter((key) => rowSelection[key])
+                  .map((key) => tableData[key].Item_id)
+                  .join(", ")
+          }?`,
+          button1Text: "Yes",
+          button1Action: handleConfirmDelete,
+          button2Text: "No",
+          button2Action: handleCancelDelete,
+        });
+      }
+
       setShowModal(true);
     }
   };
@@ -584,9 +638,6 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handleConfirmDelete = async () => {
     if (selectedRow) {
       try {
-        console.log("session", session);
-        console.log("selectedRow item ID", selectedRow.Item_id);
-        // Change the status to 'IZ'
         await changeRowStatus(selectedRow.Item_id, "IZ", session);
       } catch (error) {
         console.error("Failed to update item status", error);
@@ -599,11 +650,17 @@ export const ItemsTable = React.memo(function ItemsTable({
 
       // Change status of each selected row
       for (const row of selectedRows) {
-        const itemId = row.Item_id;
-        try {
-          await changeRowStatus(itemId, "IZ", session);
-        } catch (error) {
-          console.error("Failed to change row status", error);
+        if (row.group_sequence !== "1") {
+          const itemId = row.Item_id;
+          try {
+            await changeRowStatus(itemId, "IZ", session);
+          } catch (error) {
+            console.error("Failed to change row status", error);
+          }
+        } else {
+          console.log(
+            `Cannot delete item with group sequence 1: ${row.Item_id}`
+          );
         }
       }
     }
@@ -754,20 +811,11 @@ export const ItemsTable = React.memo(function ItemsTable({
     <div ref={tableRef}>
       <Modal
         isOpen={showModal}
-        text={`Are you sure you want to delete the row${
-          Object.keys(rowSelection).length > 0 && "s"
-        } number ${
-          selectedRow
-            ? selectedRow.Item_id
-            : Object.keys(rowSelection)
-                .filter((key) => rowSelection[key])
-                .map((key) => tableData[key].Item_id)
-                .join(", ")
-        }?`}
-        button1Text="Yes"
-        button1Action={handleConfirmDelete}
-        button2Text="No"
-        button2Action={handleCancelDelete}
+        text={modalConfig.text}
+        button1Text={modalConfig.button1Text}
+        button1Action={modalConfig.button1Action}
+        button2Text={modalConfig.button2Text}
+        button2Action={modalConfig.button2Action}
       />
       {clicked && (
         <ContextMenu
@@ -783,7 +831,6 @@ export const ItemsTable = React.memo(function ItemsTable({
       >
         <div className="absolute flex gap-2">
           <TopMenuButton description="Hide Columns" onClick={handleOpening} />
-
           <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
           <DeleteButton description="Delete" onclick={handleDelete} />
 

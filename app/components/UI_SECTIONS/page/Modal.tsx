@@ -1,6 +1,13 @@
-import React from "react";
+interface ModalProps {
+  isOpen: boolean;
+  text: string;
+  button1Text: string;
+  button1Action: () => void;
+  button2Text?: string;
+  button2Action?: () => void;
+}
 
-const Modal = ({
+const Modal: React.FC<ModalProps> = ({
   isOpen,
   text,
   button1Text,
