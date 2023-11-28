@@ -18,8 +18,8 @@ import {
 import {
   addRow,
   calculateHighestGroupSeq,
+  changeRowStatus,
   customCellRenderer,
-  deleteRow,
   down,
   fetchTableData,
   fuzzySort,
@@ -33,7 +33,7 @@ import {
   up,
   useSkipper,
 } from "./functions/items_table_fns";
-import React, { useMemo, useRef, useState, useEffect, useReducer } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { ProjectItems, Session } from "../../../../types";
 import { useOptionStore } from "../../../../store/store";
 import { IconWithDescription } from "../../../UI_ATOMS/IconWithDescription";
@@ -51,6 +51,8 @@ import { io } from "socket.io-client";
 import TopMenuButton from "./components/topMenu/TopMenuButton";
 import { AddButton } from "./components/topMenu/AddButton";
 import HideCheckBox from "./components/HideCheckBox";
+import { DeleteButton } from "./components/topMenu/DeleteButton";
+import Modal from "../../../UI_SECTIONS/page/Modal";
 
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
@@ -78,14 +80,14 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [tableData, setTableData] = useState(useMemo(() => data, []));
   const [isFiltering, setIsFiltering] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState({}); //object of booleans, selection throu checkbox, can be many rows or one
-  const [groupSequence, setGroupSequence] = useState<number[]>([]); //array of numbers, selection through click, can be many rows or one
+  const [rowSelection, setRowSelection] = useState({}); //bolleans: selection throu checkbox, can be many rows or one
   const [sorting, setSorting] = useState<SortingState>([]);
   const [filterInputKey, setFilterInputKey] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [openingMenu, setOpeningMenu] = useState(false);
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
   const [clicked, setClicked] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [points, setPoints] = useState({
     x: 0,
     y: 0,
@@ -95,7 +97,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const job_id = searchParams.get("job_id") as string;
 
   //------------------------------------ZUSTAND store
-  const selectedRow = useOptionStore((state) => state.selectedRow);
+  const selectedRow = useOptionStore((state) => state.selectedRow); // row selected by click
   const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
 
   //------------------------------------COLUMNS
@@ -506,7 +508,136 @@ export const ItemsTable = React.memo(function ItemsTable({
     // debugTable: true,
   });
 
-  //------------------------------------FUNCTIONS
+  //------------------------------------CRUD ROW FUNCTIONS
+
+  const handleAdd = async (
+    kind: "primary" | "secondary" | "tertiary"
+  ): Promise<void> => {
+    const { project, batch, items } = await fetchTableData(
+      Number(job_id),
+      batchNum,
+      session
+    );
+    const highest = (getHighestItemId(items) + 1).toString();
+    const newTableRow = {
+      ...newRow,
+      Item_id: highest,
+      job_id: job_id,
+      batch_number: batchNum,
+      created_date: new Date(),
+      budget_currency: project.currency_code,
+      budget_exchange_rate: parseFloat("1"),
+      actual_value: parseFloat("0"),
+      budget_value: parseFloat("0"),
+      client_value: parseFloat("0"),
+      item_status:
+        batch.batch_status === "BB"
+          ? "IB"
+          : batch.batch_status === "BD"
+          ? "ID"
+          : "UN",
+    };
+
+    if (selectedRow) {
+      console.log("selected row in add", selectedRow);
+      const groupNumRows = tableData.filter(
+        (row) => row.group_number === selectedRow.group_number
+      );
+      newTableRow.group_number = selectedRow.group_number;
+      newTableRow.location_code = selectedRow.location_code;
+
+      if (kind === "secondary") {
+        // Find all secondary rows in the same group as the selected row
+        const secondaryRows = groupNumRows.filter(
+          (row) => Number(row.group_sequence) < 101
+        );
+        const highestGroupSeq = secondaryRows.length + 1;
+        newTableRow.group_sequence = highestGroupSeq.toString();
+      } else if (kind === "tertiary") {
+        const highestGroupSeq =
+          groupNumRows.length > 0
+            ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence)))
+            : 0;
+
+        newTableRow.group_sequence = (
+          highestGroupSeq < 101 ? 101 : highestGroupSeq + 1
+        ).toString();
+      }
+    }
+    if (kind === "primary") {
+      newTableRow.group_number = highest;
+      newTableRow.group_sequence = "1";
+    }
+
+    addRow(newTableRow, session); //DB POST api call
+  };
+
+  const handleDelete = () => {
+    if (
+      (selectedRow && "Item_id" in selectedRow) ||
+      Object.keys(rowSelection).length > 0
+    ) {
+      setShowModal(true);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedRow) {
+      try {
+        console.log("session", session);
+        console.log("selectedRow item ID", selectedRow.Item_id);
+        // Change the status to 'IZ'
+        await changeRowStatus(selectedRow.Item_id, "IZ", session);
+      } catch (error) {
+        console.error("Failed to update item status", error);
+      }
+    } else if (Object.keys(rowSelection).length > 0) {
+      // Get the selected rows
+      const selectedRows = Object.entries(rowSelection)
+        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+        .map(([key]) => tableData[key]);
+
+      // Change status of each selected row
+      for (const row of selectedRows) {
+        const itemId = row.Item_id;
+        try {
+          await changeRowStatus(itemId, "IZ", session);
+        } catch (error) {
+          console.error("Failed to change row status", error);
+        }
+      }
+    }
+    setRowSelection({});
+    setShowModal(false);
+  };
+
+  const handleCancelDelete = () => {
+    //setSelectedRow(null);
+    setShowModal(false);
+  };
+
+  //------------------------------------SELECT FILTERS & LINK ROW FUNCTIONS
+  const onRowClick = (row: Row<ProjectItems>) => {
+    setSelectedRow(null); // Deselect the row
+    const actualRow = row.original;
+    const isAnyRowSelected = Object.values(rowSelection).some(
+      (value) => value === true
+    );
+    if (!isAnyRowSelected) {
+      setSelectedRow(actualRow);
+    }
+  };
+
+  const getRowStyles = (row: Row<ProjectItems>, index: number) => {
+    let rowStyles = {};
+    // Check if the row is selected by checkbox or by click
+    if (rowSelection[index] || row.original.Item_id === selectedRow?.Item_id) {
+      rowStyles = { backgroundColor: "#BDCCE5" }; // Color for selected row
+    } else {
+      rowStyles = {}; // Default styles for deselected row
+    }
+    return rowStyles;
+  };
 
   const clearAllFilters = () => {
     const toggleFiltering = () => setIsFiltering((prevState) => !prevState);
@@ -530,122 +661,8 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handleOpening = () => {
     setOpeningMenu(!openingMenu);
   };
-  const handleAdd = async (
-    kind: "primary" | "secondary" | "tertiary"
-  ): Promise<void> => {
-    const { project, batch, items } = await fetchTableData(
-      Number(job_id),
-      batchNum,
-      session
-    );
-    const highest = (getHighestItemId(items) + 1).toString();
 
-    const newTableRow = {
-      ...newRow,
-      Item_id: highest,
-      job_id: job_id,
-      batch_number: batchNum,
-      created_date: new Date(),
-      budget_currency: project.currency_code,
-      budget_exchange_rate: parseFloat("1"),
-      actual_value: parseFloat("0"),
-      budget_value: parseFloat("0"),
-      client_value: parseFloat("0"),
-      item_status:
-        batch.batch_status === "BB"
-          ? "IB"
-          : batch.batch_status === "BD"
-          ? "ID"
-          : "UN",
-    };
-
-    if (selectedRow) {
-      const groupNumRows = tableData.filter(
-        (row) => row.group_number === selectedRow.group_number
-      );
-      const highestGroupSeq = groupNumRows.length + 1;
-      newTableRow.group_number = selectedRow.group_number;
-      newTableRow.location_code = selectedRow.location_code;
-
-      if (kind === "secondary") {
-        // Find all secondary rows in the same group as the selected row
-        const secondaryRows = groupNumRows.filter(
-          (row) => Number(row.group_sequence) < 101
-        );
-        const highestGroupSeq = secondaryRows.length + 1;
-        newTableRow.group_sequence = highestGroupSeq.toString();
-      } else if (kind === "tertiary") {
-        const highestGroupSeq =
-          groupNumRows.length > 0
-            ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence)))
-            : 0;
-
-        newTableRow.group_sequence = (
-          highestGroupSeq < 101 ? 101 : highestGroupSeq + 1
-        ).toString();
-      }
-    } else if (kind === "primary") {
-      newTableRow.group_number = highest;
-      newTableRow.group_sequence = "1";
-    }
-
-    addRow(newTableRow, session); //DB POST api call
-  };
-
-  const handleDelete = async () => {
-    console.log("selectedRow from delete", selectedRow);
-    console.log("row selection", rowSelection);
-    if (selectedRow && "Item_id" in selectedRow) {
-      const itemId = selectedRow["Item_id"] as string;
-      try {
-        await deleteRow(itemId, session);
-      } catch (error) {
-        console.error("Failed to delete row", error);
-      }
-    } else if (Object.keys(rowSelection).length > 0) {
-      // Get the selected rows
-      const selectedRows = Object.entries(rowSelection)
-        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
-        .map(([key]) => tableData[key]);
-
-      // Delete each selected row
-      for (const row of selectedRows) {
-        const itemId = row.Item_id;
-        try {
-          await deleteRow(itemId, session);
-        } catch (error) {
-          console.error("Failed to delete row", error);
-        }
-      }
-    }
-    setRowSelection({});
-  };
-
-  const onRowClick = (row: Row<ProjectItems>) => {
-    setSelectedRow(null); // Deselect the row
-    const actualRow = row.original;
-    const isAnyRowSelected = Object.values(rowSelection).some(
-      (value) => value === true
-    );
-
-    if (!isAnyRowSelected) {
-      setSelectedRow(actualRow);
-      console.log("tableData", tableData);
-      console.log("highest", calculateHighestGroupSeq(tableData, actualRow));
-    }
-  };
-
-  const getRowStyles = (row: Row<ProjectItems>, index: number) => {
-    let rowStyles = {};
-    // Check if the row is selected by checkbox or by click
-    if (rowSelection[index] || row.original.Item_id === selectedRow?.Item_id) {
-      rowStyles = { backgroundColor: "#BDCCE5" }; // Color for selected row
-    } else {
-      rowStyles = {}; // Default styles for deselected row
-    }
-    return rowStyles;
-  };
-  //----------------------------------USE EFFECTS AND LISTENERS
+  //----------------------------------USE EFFECTS AND SOCKETS
   useEffect(() => {
     const columnFilters = table.getState().columnFilters;
     columnFilters.forEach((filter) => {
@@ -677,7 +694,6 @@ export const ItemsTable = React.memo(function ItemsTable({
       console.log("WebSocket error: ", error);
     });
     socket.on("itemUpdated", (updatedItem) => {
-      console.log("Received updated item: ", updatedItem);
       // Trim all string values in the updated item
       let trimmedItem = { ...updatedItem };
       for (let key in trimmedItem) {
@@ -685,12 +701,21 @@ export const ItemsTable = React.memo(function ItemsTable({
           trimmedItem[key] = trimmedItem[key].trim();
         }
       }
-      setTableData((prevItems) =>
-        prevItems.map((item) =>
-          item.Item_id === trimmedItem.Item_id ? trimmedItem : item
-        )
+      console.log("Received updated item: ", trimmedItem);
+
+      setTableData(
+        (prevItems) =>
+          prevItems
+            .map((item) =>
+              item.Item_id === trimmedItem.Item_id ? trimmedItem : item
+            )
+            .filter((item) => item.item_status !== "IZ") // Filter out items with status "IZ"
       );
+      // Empty both rowSelection and selectedRow
+      setRowSelection([]);
+      setSelectedRow(null);
     });
+
     socket.on("itemDeleted", (deletedItem) => {
       setTableData((prevItems) =>
         prevItems.filter((item) => item.Item_id !== deletedItem.Item_id.trim())
@@ -717,8 +742,7 @@ export const ItemsTable = React.memo(function ItemsTable({
     });
 
     setTableData(sortedData);
-    console.log("sorted data", sortedData);
-    // Cleanup function
+
     return () => {
       socket.close();
       document.removeEventListener("click", handleOutsideClick);
@@ -728,6 +752,23 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   return (
     <div ref={tableRef}>
+      <Modal
+        isOpen={showModal}
+        text={`Are you sure you want to delete the row${
+          Object.keys(rowSelection).length > 0 && "s"
+        } number ${
+          selectedRow
+            ? selectedRow.Item_id
+            : Object.keys(rowSelection)
+                .filter((key) => rowSelection[key])
+                .map((key) => tableData[key].Item_id)
+                .join(", ")
+        }?`}
+        button1Text="Yes"
+        button1Action={handleConfirmDelete}
+        button2Text="No"
+        button2Action={handleCancelDelete}
+      />
       {clicked && (
         <ContextMenu
           top={points.y}
@@ -744,11 +785,8 @@ export const ItemsTable = React.memo(function ItemsTable({
           <TopMenuButton description="Hide Columns" onClick={handleOpening} />
 
           <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
-          <IconWithDescription
-            icon={MdDelete}
-            description="Delete"
-            onclick={handleDelete}
-          />
+          <DeleteButton description="Delete" onclick={handleDelete} />
+
           <IconWithDescription
             icon={MdArrowOutward}
             description="Move"
@@ -885,67 +923,33 @@ export const ItemsTable = React.memo(function ItemsTable({
 
 /*
 
-  const handleAdd = async (
-    kind: "primary" | "secondary" | "tertiary"
-  ): Promise<void> => {
-    const { project, batch, items } = await fetchTableData(
-      //i made an endpoint specifically to get all this data in one call
-      Number(job_id),
-      batchNum,
-      session
-    );
-    const highest = (getHighestItemId(items) + 1).toString();
-    const newTableRow = {
-      ...newRow,
-      Item_id: highest,
-      job_id: job_id,
-      batch_number: batchNum,
-      created_date: new Date(),
-      budget_currency: project.currency_code,
-      budget_exchange_rate: parseFloat("1"),
-      actual_value: parseFloat("0"),
-      budget_value: parseFloat("0"),
-      client_value: parseFloat("0"),
-      item_status:
-        batch.batch_status === "BB"
-          ? "IB"
-          : batch.batch_status === "BD"
-          ? "ID"
-          : "UN",
-    };
-
-    if (kind === "primary") {
-      newTableRow.group_number = highest;
-      newTableRow.group_sequence = "1";
-      addRow(newTableRow, session); //DB POST api call
-    } else if (kind === "secondary") {
-      if (selectedRow) {
-        const groupNumRows = tableData.filter(
-          (row) => row.group_number === selectedRow.group_number
-        );
-        const highestGroupSeq = groupNumRows.length + 1;
-        newTableRow.group_sequence = highestGroupSeq.toString();
-        newTableRow.group_number = selectedRow.group_number;
-        addRow(newTableRow, session);
+  const handleDelete = async () => {
+    console.log("selectedRow from delete", selectedRow);
+    console.log("row selection", rowSelection);
+    if (selectedRow && "Item_id" in selectedRow) {
+      const itemId = selectedRow["Item_id"] as string;
+      try {
+        await deleteRow(itemId, session);
+      } catch (error) {
+        console.error("Failed to delete row", error);
       }
-    } else if (kind === "tertiary") {
-      if (selectedRow) {
-        const groupNumRows = tableData.filter(
-          (row) => row.group_number === selectedRow.group_number
-        );
+    } else if (Object.keys(rowSelection).length > 0) {
+      // Get the selected rows
+      const selectedRows = Object.entries(rowSelection)
+        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+        .map(([key]) => tableData[key]);
 
-        // Find the highest group sequence in this group
-        const highestGroupSeq =
-          groupNumRows.length > 0
-            ? Math.max(...groupNumRows.map((row) => Number(row.group_sequence)))
-            : 0;
-
-        const newGroupSeq = highestGroupSeq < 101 ? 101 : highestGroupSeq + 1;
-        newTableRow.group_sequence = newGroupSeq.toString();
-        newTableRow.group_number = selectedRow.group_number;
-        addRow(newTableRow, session); // Add the new tertiary row to the database
+      // Delete each selected row
+      for (const row of selectedRows) {
+        const itemId = row.Item_id;
+        try {
+          await deleteRow(itemId, session);
+        } catch (error) {
+          console.error("Failed to delete row", error);
+        }
       }
     }
+    setRowSelection({});
   };
 
 

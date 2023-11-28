@@ -1,5 +1,5 @@
-import { format } from 'date-fns';
-import { ProjectProjects } from '../types';
+import { format } from "date-fns";
+import { ProjectItems, ProjectProjects } from "../types";
 
 export const extractingRoute = (path: string): string => {
   const parts = path.split("/");
@@ -18,14 +18,26 @@ export const extractKeys = (arr: object[]): string[] => {
   return Array.from(allKeys);
 };
 
-
-
-export function formatDate(date: Date | number, formatString = 'yyyy-MM-dd'): string {
+export function formatDate(
+  date: Date | number,
+  formatString = "yyyy-MM-dd"
+): string {
   return format(date, formatString);
 }
 
-
-
 export const filterActiveProjects = (projects: ProjectProjects[]) => {
-  return projects.filter(project => project.status_code === 'JA');
+  return projects.filter((project) => project.status_code === "JA");
+};
+
+// transform items to remove any white spaces
+export const transformItems = (items: ProjectItems[]) => {
+  return items.map((item) => {
+    const newItem = { ...item };
+    for (const key in newItem) {
+      if (typeof newItem[key] === "string") {
+        newItem[key] = newItem[key].trim();
+      }
+    }
+    return newItem;
+  });
 };

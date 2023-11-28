@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Column,
-  Table,
-  sortingFns,
-  FilterFn,
-  SortingFn,
-} from "@tanstack/react-table";
+import { Column, Table, FilterFn, SortingFn } from "@tanstack/react-table";
 import {
   RankingInfo,
   rankItem,
@@ -64,13 +58,13 @@ export const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
   return dir;
 };
 
-export const Filter = React.memo(function Filter({
+export const Filter = ({
   column,
   table,
 }: {
   column: Column<any, unknown>;
   table: Table<any>;
-}) {
+}) => {
   const firstValue = table
     .getPreFilteredRowModel()
     .flatRows[0]?.getValue(column.id);
@@ -106,7 +100,7 @@ export const Filter = React.memo(function Filter({
       <div className="h-1" />
     </>
   );
-});
+};
 
 // A debounced input react component
 export const DebouncedInput = React.memo(function DebouncedInput({

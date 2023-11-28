@@ -26,10 +26,6 @@ interface Column {
   getIsVisible: () => boolean;
   getToggleVisibilityHandler: () => () => void;
 }
-
-export interface Table {
-  getAllLeafColumns: () => Column[];
-}
 interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
   row: { index: number; original: ProjectItems };
@@ -37,14 +33,12 @@ interface CustomCellRendererProps {
   table: any; // replace 'any' with the actual type of 'table'
 }
 
-interface TableItem {
-  group_number: string;
-  group_sequence: string;
-}
+//-----------------------------------------------calculations for adding and sorting rows-------------------------------------------------------------
 
-//-------------------------------------------------------------Top Menu Functions-------------------------------------------------------------
-
-export const calculateHighestGroupSeq = (data, actualRow) => {
+export const calculateHighestGroupSeq = (
+  data: ProjectItems[],
+  actualRow: ProjectItems
+) => {
   const groupNumRows = data.filter(
     (row) => row.group_number === actualRow.group_number
   );
@@ -53,7 +47,30 @@ export const calculateHighestGroupSeq = (data, actualRow) => {
   console.log("highest group seq", highestGroupSeq);
   return highestGroupSeq;
 };
+export const getHighestItemId = (items: ProjectItems[]) => {
+  let highest = 0;
+  if (Array.isArray(items)) {
+    items.forEach((item) => {
+      if (parseInt(item.Item_id) > highest) {
+        highest = parseInt(item.Item_id);
+      }
+    });
+  } else {
+    console.error("Error: items is not an array", items);
+  }
+  return highest;
+};
 
+export const sortTableData = (data: ProjectItems[]) => {
+  return [...data].sort((a, b) => {
+    if (a.group_number < b.group_number) return -1;
+    if (a.group_number > b.group_number) return 1;
+    return Number(a.group_sequence) - Number(b.group_sequence);
+  });
+};
+
+//-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
+// fetching data in order to calculate info to ADD A NEW ROW
 export const fetchTableData = async (
   id: number,
   batchNumber: string,
@@ -83,22 +100,8 @@ export const fetchTableData = async (
     console.error("Error fetching table data:", error);
   }
 };
-export const getHighestItemId = (items) => {
-  let highest = 0;
-  if (Array.isArray(items)) {
-    items.forEach((item) => {
-      if (parseInt(item.Item_id) > highest) {
-        highest = parseInt(item.Item_id);
-      }
-    });
-  } else {
-    console.error("Error: items is not an array", items);
-  }
-  return highest;
-};
 
-//-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
-
+//ADD
 export const addRow = async (
   newRow: ProjectItemsWithSelect,
   session: Session | null
@@ -124,27 +127,37 @@ export const addRow = async (
     console.error("Error adding row:", error);
   }
 };
+// DELETE
+export const changeRowStatus = async (
+  itemId: string,
+  status: string,
+  session: Session
+) => {
+  console.log("Session token:", session.accessToken); // Log the session token
 
-export const deleteRow = async (itemId: string, session: Session | null) => {
-  console.log("calling endpoint");
   try {
+    // Send a PUT request to your backend to update the status of the item
     const response = await fetch(`http://localhost:3000/items/${itemId}`, {
-      method: "DELETE",
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.accessToken}`,
       },
+      body: JSON.stringify({ item_status: status }), // Update the item_status field with the new status
     });
 
     if (response.ok) {
-      console.log("Row deleted successfully");
+      console.log("Item status updated successfully");
     } else {
-      console.error("Failed to delete row");
+      console.error("Failed to update item status");
     }
   } catch (error) {
-    console.error("Error deleting row:", error);
+    // Handle error if the update fails
+    console.error("Error updating item status:", error);
   }
 };
+
+// UPDATE
 
 //-------------------------------------------------------------Cell Functions-------------------------------------------------------------
 
@@ -212,6 +225,7 @@ export const customCellRenderer = ({
     />
   );
 };
+
 export const idCellRenderer = ({ getValue, fun }: idCellRendererProps) => {
   const initialValue = getValue();
   return (
@@ -266,7 +280,9 @@ export const lockCellRenderer = ({
 //-------------------------------------------------------------Column Functions-------------------------------------------------------------
 
 // `columnList` is a function component that renders a list of columns.
-export const columnList = (currTable) => {
+export const columnList = (currTable: {
+  getAllLeafColumns: () => Column[];
+}) => {
   return currTable.getAllLeafColumns().map((column: Column) => {
     console.log("column", column.getIsVisible);
     return (
@@ -413,10 +429,25 @@ export const newRow: ProjectItemsWithSelect = {
   modified_date: null,
 };
 
-export const sortTableData = (data: ProjectItems[]) => {
-  return [...data].sort((a, b) => {
-    if (a.group_number < b.group_number) return -1;
-    if (a.group_number > b.group_number) return 1;
-    return Number(a.group_sequence) - Number(b.group_sequence);
-  });
+// old real delete row function
+
+export const deleteRow = async (itemId: string, session: Session | null) => {
+  console.log("calling endpoint");
+  try {
+    const response = await fetch(`http://localhost:3000/items/${itemId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+
+    if (response.ok) {
+      console.log("Row deleted successfully");
+    } else {
+      console.error("Failed to delete row");
+    }
+  } catch (error) {
+    console.error("Error deleting row:", error);
+  }
 };
