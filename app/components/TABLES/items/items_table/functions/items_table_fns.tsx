@@ -33,7 +33,7 @@ interface CustomCellRendererProps {
   table: any; // replace 'any' with the actual type of 'table'
 }
 
-//-----------------------------------------------calculations ofr adding and sorting rows-------------------------------------------------------------
+//-----------------------------------------------calculations for adding and sorting rows-------------------------------------------------------------
 
 export const calculateHighestGroupSeq = (
   data: ProjectItems[],
@@ -70,7 +70,7 @@ export const sortTableData = (data: ProjectItems[]) => {
 };
 
 //-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
-
+// fetching data in order to calculate info to ADD A NEW ROW
 export const fetchTableData = async (
   id: number,
   batchNumber: string,
@@ -101,6 +101,7 @@ export const fetchTableData = async (
   }
 };
 
+//ADD
 export const addRow = async (
   newRow: ProjectItemsWithSelect,
   session: Session | null
@@ -126,7 +127,7 @@ export const addRow = async (
     console.error("Error adding row:", error);
   }
 };
-
+// DELETE
 export const changeRowStatus = async (
   itemId: string,
   status: string,
@@ -155,6 +156,9 @@ export const changeRowStatus = async (
     console.error("Error updating item status:", error);
   }
 };
+
+// UPDATE
+
 //-------------------------------------------------------------Cell Functions-------------------------------------------------------------
 
 export const customCellRenderer = ({

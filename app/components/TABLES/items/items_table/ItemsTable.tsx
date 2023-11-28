@@ -563,13 +563,15 @@ export const ItemsTable = React.memo(function ItemsTable({
           highestGroupSeq < 101 ? 101 : highestGroupSeq + 1
         ).toString();
       }
-    } else if (kind === "primary") {
+    }
+    if (kind === "primary") {
       newTableRow.group_number = highest;
       newTableRow.group_sequence = "1";
     }
 
     addRow(newTableRow, session); //DB POST api call
   };
+
   const handleDelete = () => {
     if (
       (selectedRow && "Item_id" in selectedRow) ||
@@ -741,13 +743,6 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     setTableData(sortedData);
 
-    // Get the selected rows
-    const selected = Object.entries(rowSelection)
-      .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
-      .map(([key]) => tableData[key]);
-
-    // Cleanup function
-    console.log("rows selection", selected);
     return () => {
       socket.close();
       document.removeEventListener("click", handleOutsideClick);
