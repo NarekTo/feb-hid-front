@@ -42,20 +42,25 @@ const DashboardList = ({ userProjects }) => {
   }, [allProjects]);
 
   return (
-    <main className="w-full h-full grid grid-cols-2 gap-2 px-2">
+    <main className="w-full h-full grid grid-cols-2 gap-2 px-2 gap-y-4">
       <AllItemsChart
         allProjects={allProjects}
         selectedProject={selectedProject}
         setSelectedProject={setSelectedProject}
       />
+
       {tableItems &&
         tableItems.map((project, index) => (
-          <MainTable
-            key={index}
-            tableItems={Object.values(project)} // Render the values of the object
-            onBatchClick={handleBatchClick}
-            clickableColumn={"Item_id"}
-          />
+          <div className="mb-6">
+            <h1>TABLE {project.job_id}</h1>
+            <h3>{project.job_id}</h3>
+            <MainTable
+              key={index}
+              tableItems={Object.values(project)} // Render the values of the object
+              onBatchClick={handleBatchClick}
+              clickableColumn={"Item_id"}
+            />
+          </div>
         ))}
     </main>
   );
