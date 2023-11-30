@@ -580,18 +580,12 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleDelete = () => {
-    const sameGroupRows = tableData.filter(
-      (row) => row.group_number === selectedRow.group_number
-    );
-    console.log("same group rows", sameGroupRows.length);
-    if (
-      (selectedRow && "Item_id" in selectedRow) ||
-      Object.keys(rowSelection).length > 0
-    ) {
+    if (selectedRow && "Item_id" in selectedRow) {
+      const sameGroupRows = tableData.filter(
+        (row) => row.group_number === selectedRow.group_number
+      );
       // Check if the selected row's group sequence is 1
       if (selectedRow.group_sequence === "1") {
-        // Get all rows with the same group number
-
         // If there are other rows in the same group, prevent deletion
         if (sameGroupRows.length > 1) {
           setModalConfig({
@@ -633,9 +627,48 @@ export const ItemsTable = React.memo(function ItemsTable({
 
       setShowModal(true);
     }
+    if (Object.keys(rowSelection).length > 0) {
+      console.log("clicking");
+      const selectedRows =
+        Object.keys(rowSelection).length > 0
+          ? Object.entries(rowSelection)
+              .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+              .map(([key]) => tableData[key])
+          : selectedRow
+          ? [selectedRow]
+          : [];
+      console.log("selected rows", selectedRows);
+      const hasGroupSequenceOne = selectedRows.some((row) => {
+        const sameGroupRows = tableData.filter(
+          (tableRow) => tableRow.group_number === row.group_number
+        );
+
+        return row.group_sequence === "1" && sameGroupRows.length > 1;
+      });
+      if (hasGroupSequenceOne) {
+        setModalConfig({
+          text: "Cannot delete item with group sequence 1 if there are other items in the same group",
+          button1Text: "OK",
+          button1Action: () => setShowModal(false),
+          button2Text: "",
+          button2Action: () => {},
+        });
+      } else {
+        setModalConfig({
+          text: `Are you sure you want to delete the selected item(s)?`,
+          button1Text: "Yes",
+          button1Action: () => handleConfirmDelete(),
+          button2Text: "No",
+          button2Action: handleCancelDelete,
+        });
+      }
+
+      setShowModal(true);
+    }
   };
 
   const handleConfirmDelete = async () => {
+    console.log("clicked delete");
     if (selectedRow) {
       try {
         await changeRowStatus(selectedRow.Item_id, "IZ", session);
@@ -643,6 +676,7 @@ export const ItemsTable = React.memo(function ItemsTable({
         console.error("Failed to update item status", error);
       }
     } else if (Object.keys(rowSelection).length > 0) {
+      console.log("row selection", rowSelection);
       // Get the selected rows
       const selectedRows = Object.entries(rowSelection)
         .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
@@ -650,17 +684,11 @@ export const ItemsTable = React.memo(function ItemsTable({
 
       // Change status of each selected row
       for (const row of selectedRows) {
-        if (row.group_sequence !== "1") {
-          const itemId = row.Item_id;
-          try {
-            await changeRowStatus(itemId, "IZ", session);
-          } catch (error) {
-            console.error("Failed to change row status", error);
-          }
-        } else {
-          console.log(
-            `Cannot delete item with group sequence 1: ${row.Item_id}`
-          );
+        const itemId = row.Item_id;
+        try {
+          await changeRowStatus(itemId, "IZ", session);
+        } catch (error) {
+          console.error("Failed to change row status", error);
         }
       }
     }

@@ -19,12 +19,11 @@ const BatchesList: FC<BatchesListProps> = ({ projects }) => {
   const handleBatchClick = (item: ProjectBatches) => {
     const batchNumber = item.batch_number.trim();
     const jobId = item.job_id;
-    router.push(
-      `/items/batches/${batchNumber}?job_id=${jobId.trim()}&project_name=${name.replace(
-        / /g,
-        "_"
-      )}`
-    );
+    const url = `/items/batches/${batchNumber}?job_id=${jobId.trim()}&project_name=${name.replace(
+      / /g,
+      "_"
+    )}`;
+    window.open(url, "_blank");
   };
 
   return (

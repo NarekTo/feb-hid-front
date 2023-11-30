@@ -41,3 +41,35 @@ export const transformItems = (items: ProjectItems[]) => {
     return newItem;
   });
 };
+
+// statuses for chart
+export const getStatusName = (status: string): string => {
+  const statusMap: { [key: string]: string } = {
+    IB: "I. budgeting",
+    ID: "I. Detailing",
+    IDQ: "I. Tender Submitted",
+    IDT: "I. Tender Received",
+    IDS: "I. Submitted Appr.",
+    IDR: "I. Rejected",
+    IDA: "I. Approved",
+    IXH: "I. not Required",
+    IZ: "I. Deleted",
+    IOP: "I. Order Preparation",
+    IOR: "I. Order Submitted Appr.",
+    IOA: "I. Approved Issue",
+    IOI: "I. Order Issued Supp.",
+    IOF: "I. Order Finished",
+    IOD: "I. Arrived Delivery Dest.",
+    ISP: "I. Shipment Preparation",
+    ISS: "I. Shipment Sent",
+    ISA: "I. Shipment Arrived",
+    ISC: "I. Shipment Customs",
+    ISH: "I. Shipment Held Customs",
+    IWJ: "I. Shipment WH Jeddah",
+    IWR: "I. Shipment WH Riyadh",
+    IZS: "I. Sent to Client",
+    IZI: "I. Installation",
+  };
+
+  return statusMap[status] || "Unknown status";
+};
