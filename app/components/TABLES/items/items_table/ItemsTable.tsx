@@ -16,12 +16,9 @@ import {
   Row,
 } from "@tanstack/react-table";
 import {
-  addRow,
   calculateHighestGroupSeq,
-  changeRowStatus,
   customCellRenderer,
   down,
-  fetchTableData,
   fuzzySort,
   getHighestItemId,
   idCellRenderer,
@@ -53,6 +50,7 @@ import { AddButton } from "./components/topMenu/AddButton";
 import HideCheckBox from "./components/HideCheckBox";
 import { DeleteButton } from "./components/topMenu/DeleteButton";
 import Modal from "../../../UI_SECTIONS/page/Modal";
+import { addRow, changeRowStatus, fetchRowData } from "../../../../utils/api";
 
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
@@ -520,7 +518,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handleAdd = async (
     kind: "primary" | "secondary" | "tertiary"
   ): Promise<void> => {
-    const { project, batch, items } = await fetchTableData(
+    const { project, batch, items } = await fetchRowData(
       Number(job_id),
       batchNum,
       session
@@ -578,120 +576,66 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     addRow(newTableRow, session); //DB POST api call
   };
-
   const handleDelete = () => {
-    if (selectedRow && "Item_id" in selectedRow) {
+    // Get the selected rows
+    const selectedRows =
+      Object.keys(rowSelection).length > 0
+        ? Object.entries(rowSelection)
+            .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+            .map(([key]) => tableData[key])
+        : selectedRow
+        ? [selectedRow]
+        : [];
+
+    if (selectedRows.length === 0) {
+      console.error("No row selected");
+      return;
+    }
+
+    const hasGroupSequenceOne = selectedRows.some((row) => {
       const sameGroupRows = tableData.filter(
-        (row) => row.group_number === selectedRow.group_number
+        (tableRow) => tableRow.group_number === row.group_number
       );
-      // Check if the selected row's group sequence is 1
-      if (selectedRow.group_sequence === "1") {
-        // If there are other rows in the same group, prevent deletion
-        if (sameGroupRows.length > 1) {
-          setModalConfig({
-            text: "Cannot delete item with group sequence 1 if there are other items in the same group",
-            button1Text: "OK",
-            button1Action: () => setShowModal(false),
-            button2Text: "",
-            button2Action: () => {},
-          });
-        } else {
-          // If it's a singleton, ask for confirmation before deletion
-          setModalConfig({
-            text: `Are you sure you want to delete the item ${selectedRow.Item_id}?`,
-            button1Text: "Yes",
-            button1Action: handleConfirmDelete,
-            button2Text: "No",
-            button2Action: handleCancelDelete,
-          });
-        }
-      } else {
-        // If group sequence is not 1, ask for confirmation before deletion
-        setModalConfig({
-          text: `Are you sure you want to delete the item${
-            Object.keys(rowSelection).length > 1 ? "s" : ""
-          } number ${
-            selectedRow
-              ? selectedRow.Item_id
-              : Object.keys(rowSelection)
-                  .filter((key) => rowSelection[key])
-                  .map((key) => tableData[key].Item_id)
-                  .join(", ")
-          }?`,
-          button1Text: "Yes",
-          button1Action: handleConfirmDelete,
-          button2Text: "No",
-          button2Action: handleCancelDelete,
-        });
-      }
 
-      setShowModal(true);
-    }
-    if (Object.keys(rowSelection).length > 0) {
-      console.log("clicking");
-      const selectedRows =
-        Object.keys(rowSelection).length > 0
-          ? Object.entries(rowSelection)
-              .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
-              .map(([key]) => tableData[key])
-          : selectedRow
-          ? [selectedRow]
-          : [];
-      console.log("selected rows", selectedRows);
-      const hasGroupSequenceOne = selectedRows.some((row) => {
-        const sameGroupRows = tableData.filter(
-          (tableRow) => tableRow.group_number === row.group_number
-        );
+      return row.group_sequence === "1" && sameGroupRows.length > 1;
+    });
 
-        return row.group_sequence === "1" && sameGroupRows.length > 1;
+    if (hasGroupSequenceOne) {
+      setModalConfig({
+        text: "Cannot delete item with group sequence 1 if there are other items in the same group",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
       });
-      if (hasGroupSequenceOne) {
-        setModalConfig({
-          text: "Cannot delete item with group sequence 1 if there are other items in the same group",
-          button1Text: "OK",
-          button1Action: () => setShowModal(false),
-          button2Text: "",
-          button2Action: () => {},
-        });
-      } else {
-        setModalConfig({
-          text: `Are you sure you want to delete the selected item(s)?`,
-          button1Text: "Yes",
-          button1Action: () => handleConfirmDelete(),
-          button2Text: "No",
-          button2Action: handleCancelDelete,
-        });
-      }
-
-      setShowModal(true);
+    } else {
+      setModalConfig({
+        text: `Are you sure you want to delete the selected item(s)?`,
+        button1Text: "Yes",
+        button1Action: () => handleConfirmDelete(selectedRows),
+        button2Text: "No",
+        button2Action: handleCancelDelete,
+      });
     }
+
+    setShowModal(true);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (rowsToDelete) => {
     console.log("clicked delete");
-    if (selectedRow) {
-      try {
-        await changeRowStatus(selectedRow.Item_id, "IZ", session);
-      } catch (error) {
-        console.error("Failed to update item status", error);
-      }
-    } else if (Object.keys(rowSelection).length > 0) {
-      console.log("row selection", rowSelection);
-      // Get the selected rows
-      const selectedRows = Object.entries(rowSelection)
-        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
-        .map(([key]) => tableData[key]);
+    // Get the selected rows
+    const selectedRows = rowsToDelete;
 
-      // Change status of each selected row
-      for (const row of selectedRows) {
-        const itemId = row.Item_id;
-        try {
-          await changeRowStatus(itemId, "IZ", session);
-        } catch (error) {
-          console.error("Failed to change row status", error);
-        }
+    // Change status of each selected row
+    for (const row of selectedRows) {
+      const itemId = row.Item_id;
+      try {
+        await changeRowStatus(itemId, "IZ", session);
+      } catch (error) {
+        console.error("Failed to change row status", error);
       }
     }
+
     setRowSelection({});
     setShowModal(false);
   };

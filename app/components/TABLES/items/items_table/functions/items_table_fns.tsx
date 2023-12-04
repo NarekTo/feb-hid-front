@@ -8,6 +8,7 @@ import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
 import { SortingFn, sortingFns } from "@tanstack/react-table";
 import { compareItems } from "@tanstack/match-sorter-utils";
 import { useSession } from "next-auth/react";
+import { updateRow } from "../../../../../utils/api";
 
 // --
 interface LockCellRendererProps {
@@ -69,96 +70,6 @@ export const sortTableData = (data: ProjectItems[]) => {
   });
 };
 
-//-------------------------------------------------------------CRUD Functions-------------------------------------------------------------
-// fetching data in order to calculate info to ADD A NEW ROW
-export const fetchTableData = async (
-  id: number,
-  batchNumber: string,
-  session: Session | null
-) => {
-  try {
-    const response = await fetch(
-      `http://localhost:3000/items/tabledata/${id}/${batchNumber}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-      }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      const { project, batch, items } = data;
-      // Now you can use project, batch, and items
-      return { project, batch, items };
-    } else {
-      console.error("Failed to fetch table data");
-    }
-  } catch (error) {
-    console.error("Error fetching table data:", error);
-  }
-};
-
-//ADD
-export const addRow = async (
-  newRow: ProjectItemsWithSelect,
-  session: Session | null
-) => {
-  const { select, ...restOfNewRow } = newRow;
-
-  try {
-    const response = await fetch(`http://localhost:3000/items`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-      body: JSON.stringify(restOfNewRow),
-    });
-
-    if (response.ok) {
-      console.log("Row added successfully");
-    } else {
-      console.error("Failed to add row");
-    }
-  } catch (error) {
-    console.error("Error adding row:", error);
-  }
-};
-// DELETE
-export const changeRowStatus = async (
-  itemId: string,
-  status: string,
-  session: Session
-) => {
-  console.log("Session token:", session.accessToken); // Log the session token
-
-  try {
-    // Send a PUT request to your backend to update the status of the item
-    const response = await fetch(`http://localhost:3000/items/${itemId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-      body: JSON.stringify({ item_status: status }), // Update the item_status field with the new status
-    });
-
-    if (response.ok) {
-      console.log("Item status updated successfully");
-    } else {
-      console.error("Failed to update item status");
-    }
-  } catch (error) {
-    // Handle error if the update fails
-    console.error("Error updating item status:", error);
-  }
-};
-
-// UPDATE
-
 //-------------------------------------------------------------Cell Functions-------------------------------------------------------------
 
 export const customCellRenderer = ({
@@ -173,26 +84,9 @@ export const customCellRenderer = ({
   const Item_id = original.Item_id;
   const onBlur = async () => {
     if (value !== initialValue) {
-      try {
-        // Send a PUT request to your backend to update the item
-        const response = await fetch(`http://localhost:3000/items/${Item_id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-          body: JSON.stringify({ [id]: value }), // Update the field with the new value
-        });
-
-        if (response.ok) {
-          console.log("Item updated successfully");
-          setValue(value);
-        } else {
-          console.error("Failed to update item");
-        }
-      } catch (error) {
-        // Handle error if the update fails
-        console.error("Error updating data:", error);
+      const updated = await updateRow(Item_id, { [id]: value }, session);
+      if (updated) {
+        setValue(value);
       }
     }
     setIsEditable(false);
