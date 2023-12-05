@@ -51,6 +51,7 @@ import HideCheckBox from "./components/HideCheckBox";
 import { DeleteButton } from "./components/topMenu/DeleteButton";
 import Modal from "../../../UI_SECTIONS/page/Modal";
 import { addRow, changeRowStatus, fetchRowData } from "../../../../utils/api";
+import { DuplicateButton } from "./components/topMenu/DuplicateButton";
 
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
@@ -597,7 +598,11 @@ export const ItemsTable = React.memo(function ItemsTable({
         (tableRow) => tableRow.group_number === row.group_number
       );
 
-      return row.group_sequence === "1" && sameGroupRows.length > 1;
+      return (
+        row.group_sequence === "1" &&
+        sameGroupRows.length > 1 &&
+        sameGroupRows.some((r) => r.group_sequence !== "1")
+      );
     });
 
     if (hasGroupSequenceOne) {
@@ -643,6 +648,38 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handleCancelDelete = () => {
     //setSelectedRow(null);
     setShowModal(false);
+  };
+
+  const handleDuplicate = async () => {
+    // Check if the user has "W" authorisation
+    const { project, batch, items } = await fetchRowData(
+      Number(job_id),
+      batchNum,
+      session
+    );
+    // Check if a row is selected
+    if (!selectedRow) {
+      console.error("No row selected");
+      return;
+    }
+    const highest = (getHighestItemId(items) + 1).toString();
+    const newTableRow = {
+      ...selectedRow,
+      group_number: highest,
+      Item_id: highest,
+      drawing_revision: "",
+      drawing_issue_date: new Date(),
+      item_status:
+        batch.batch_status === "BB"
+          ? "IB"
+          : batch.batch_status === "BD"
+          ? "ID"
+          : "UN",
+    };
+
+    // Use the addRow function to create the new row
+    addRow(newTableRow, session);
+    setSelectedRow(newTableRow);
   };
 
   //------------------------------------SELECT FILTERS & LINK ROW FUNCTIONS
@@ -805,22 +842,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           <TopMenuButton description="Hide Columns" onClick={handleOpening} />
           <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
           <DeleteButton description="Delete" onclick={handleDelete} />
-
-          <IconWithDescription
-            icon={MdArrowOutward}
-            description="Move"
-            onclick={() => console.log("moving")}
-          />
-          <IconWithDescription
-            icon={HiOutlineDuplicate}
-            description="Duplicate"
-            onclick={() => console.log("duplicate")}
-          />
-          <IconWithDescription
-            icon={BiExport}
-            description="Export"
-            onclick={() => console.log("export")}
-          />
+          <DuplicateButton description="Duplicate" onclick={handleDuplicate} />
         </div>
         {openingMenu && (
           <div className="flex w-full p-2 text-xs shadow-lg mt-12 rounded-md bg-slate-100">
