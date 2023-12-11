@@ -42,7 +42,7 @@ const DashboardList = ({ userProjects }) => {
   }, [allProjects]);
 
   return (
-    <main className="w-full h-full grid grid-cols-2 gap-2 px-2 gap-y-4">
+    <main className="px-2 pb-2 h-screen overflow-auto grid grid-cols-2 grid-rows-2 gap-4 auto-rows-min no-scrollbar">
       <AllItemsChart
         allProjects={allProjects}
         selectedProject={selectedProject}
@@ -51,7 +51,10 @@ const DashboardList = ({ userProjects }) => {
 
       {tableItems &&
         tableItems.map((project, index) => (
-          <div className="mb-6">
+          <div
+            className="h-full overflow-auto  no-scrollbar"
+            key={project.job_id}
+          >
             <h1>TABLE {project.job_id}</h1>
             <h3>{project.job_id}</h3>
             <MainTable

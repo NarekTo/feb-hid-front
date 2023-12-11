@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { FC, ReactNode, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -6,7 +6,6 @@ import Loading from "./loading";
 import { menuItemsFiltered } from "../utils/menuItems";
 import { useStore } from "../store/store";
 import { Menu } from "../components/UI_SECTIONS/menu/Menu";
-
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -19,8 +18,8 @@ const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const isBatchesPage = /\/items\/batches\/\d+/.test(pathname);
-  const job_id = searchParams.get('job_id') as string
-  const project = searchParams.get('project_name') as string
+  const job_id = searchParams.get("job_id") as string;
+  const project = searchParams.get("project_name") as string;
   const { setJobId, setProjectName, jobId, projectName } = useStore();
 
   useEffect(() => {
@@ -44,7 +43,7 @@ const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       <div className="w-1/8">
         <Menu items={items} />
       </div>
-      <div className="flex-grow">{children}</div>
+      <div className="flex-grow ">{children}</div>
     </div>
   );
 };

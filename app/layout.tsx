@@ -5,7 +5,6 @@ import "./globals.css";
 import { Rubik } from "next/font/google";
 import { RootLayoutProps } from "./types";
 
-
 const rubik = Rubik({ subsets: ["latin"] });
 
 export const metadata = {
@@ -13,22 +12,20 @@ export const metadata = {
   description: "Coded by the Hid it crew in Madrid",
 };
 
-
-
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
-    <html lang="en">
+    <html lang="en" className="h-screen m-0 p-0">
       <Providers>
-        <body className={`${rubik.className} w-full h-screen flex flex-col`}>
-        <Navbar />
-       
-          <main className="flex-grow">
-            {children}
-          </main>
+        <body
+          className={`${rubik.className} w-full h-full flex flex-col no-scrollbar`}
+        >
+          <Navbar />
+
+          <main className="flex-grow flex ">{children}</main>
         </body>
       </Providers>
     </html>
   );
-}
+};
 
 export default RootLayout;

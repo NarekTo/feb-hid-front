@@ -16,7 +16,6 @@ import {
   Row,
 } from "@tanstack/react-table";
 import {
-  calculateHighestGroupSeq,
   customCellRenderer,
   down,
   fuzzySort,
@@ -33,10 +32,6 @@ import {
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { ProjectItems, Session } from "../../../../types";
 import { useOptionStore } from "../../../../store/store";
-import { IconWithDescription } from "../../../UI_ATOMS/IconWithDescription";
-import { MdDelete, MdArrowOutward } from "react-icons/md";
-import { HiOutlineDuplicate } from "react-icons/hi";
-import { BiExport, BiHide } from "react-icons/bi";
 import { ContextMenu } from "./components/topMenu/ContextMenu";
 import { fuzzyFilter } from "./components/Filter";
 import { Filter } from "./components/Filter";
@@ -52,6 +47,7 @@ import { DeleteButton } from "./components/topMenu/DeleteButton";
 import Modal from "../../../UI_SECTIONS/page/Modal";
 import { addRow, changeRowStatus, fetchRowData } from "../../../../utils/api";
 import { DuplicateButton } from "./components/topMenu/DuplicateButton";
+import { CopyButton } from "./components/topMenu/CopyButton";
 
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
@@ -87,6 +83,9 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
   const [clicked, setClicked] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [isCopyDownMode, setIsCopyDownMode] = useState(false);
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [selectedColumn, setSelectedColumn] = useState(null);
   const [points, setPoints] = useState({
     x: 0,
     y: 0,
@@ -682,6 +681,19 @@ export const ItemsTable = React.memo(function ItemsTable({
     setSelectedRow(newTableRow);
   };
 
+  const handleCopy = async (cell) => {
+    setSelectedColumn(cell.column.id);
+    setIsCopyDownMode(!isCopyDownMode);
+    const cellValue = cell.getValue();
+    console.log("cell", cellValue);
+    try {
+      await navigator.clipboard.writeText(cellValue);
+      console.log("Cell value copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
+
   //------------------------------------SELECT FILTERS & LINK ROW FUNCTIONS
   const onRowClick = (row: Row<ProjectItems>) => {
     setSelectedRow(null); // Deselect the row
@@ -826,6 +838,7 @@ export const ItemsTable = React.memo(function ItemsTable({
         button2Text={modalConfig.button2Text}
         button2Action={modalConfig.button2Action}
       />
+
       {clicked && (
         <ContextMenu
           top={points.y}
@@ -843,6 +856,11 @@ export const ItemsTable = React.memo(function ItemsTable({
           <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
           <DeleteButton description="Delete" onclick={handleDelete} />
           <DuplicateButton description="Duplicate" onclick={handleDuplicate} />
+          <CopyButton
+            toggle={isCopyDownMode}
+            description="Copy"
+            onclick={() => (selectedRow ? handleCopy(selectedCell) : null)}
+          />
         </div>
         {openingMenu && (
           <div className="flex w-full p-2 text-xs shadow-lg mt-12 rounded-md bg-slate-100">
@@ -930,6 +948,15 @@ export const ItemsTable = React.memo(function ItemsTable({
                       cellMeta &&
                       cellMeta.getCellContext &&
                       cellMeta.getCellContext(cellContext);
+
+                    const isSelectedColumn =
+                      cell.column.id === selectedColumn && isCopyDownMode;
+
+                    const cellStyles = {
+                      backgroundColor: isSelectedColumn
+                        ? "#d9e1f2"
+                        : "transparent",
+                    };
                     return (
                       <td
                         onClick={
@@ -938,9 +965,9 @@ export const ItemsTable = React.memo(function ItemsTable({
                                 handleItemClick(
                                   Number(cell.row.original.Item_id)
                                 )
-                            : undefined
+                            : () => setSelectedCell(cell)
                         }
-                        style={rowStyles}
+                        style={{ ...rowStyles, ...cellStyles }}
                         key={cell.id}
                         className={`py-2 ${index === 1 ? "px-0 " : "px-2"}`}
                         {...cellContextProps}

@@ -118,3 +118,5 @@ export const updateRow = async (
     return false;
   }
 };
+
+//----------------------------------- PROJECTS FETCHING
