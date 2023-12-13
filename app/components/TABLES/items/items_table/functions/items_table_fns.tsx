@@ -31,7 +31,8 @@ interface CustomCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
   row: { index: number; original: ProjectItems };
   column: { id: string };
-  table: any; // replace 'any' with the actual type of 'table'
+  table: any;
+  cellRef; // replace 'any' with the actual type of 'table'
 }
 
 //-----------------------------------------------calculations for adding and sorting rows-------------------------------------------------------------
@@ -76,12 +77,40 @@ export const customCellRenderer = ({
   row: { index, original },
   column: { id },
   table,
+  cellRef,
 }: CustomCellRendererProps) => {
   const { data: session } = useSession() as { data: Session | null };
   const initialValue = original[id];
   const [value, setValue] = useState(initialValue);
   const [isEditable, setIsEditable] = useState(false);
+  const [clickedCell, setClickedCell] = useState(null);
+
   const Item_id = original.Item_id;
+
+  //console.log("cell ref", cellRef);
+  const handleControlD = () => {
+    console.log("clicked control d");
+    const tableData = table.getRowModel();
+    if (
+      index > 0 &&
+      tableData.rows[index - 1] &&
+      id in tableData.rows[index - 1].original
+    ) {
+      const aboveCell = tableData.rows[index - 1].original[id];
+      setValue(aboveCell);
+      onBlur(); // Save the value
+      if (tableData.rows[index + 1]) {
+        console.log(
+          "tableData.rows[index + 1]",
+          tableData.rows[index + 1].original[id]
+        );
+        // If there is a row below
+        // Set the focus to the cell below after a delay to allow the onBlur function to finish
+        setTimeout(() => tableData.rows[index + 1].original[id].focus(), 0);
+      }
+    }
+  };
+
   const onBlur = async () => {
     if (value !== initialValue) {
       const updated = await updateRow(Item_id, { [id]: value }, session);
@@ -99,8 +128,43 @@ export const customCellRenderer = ({
     setValue(original[id]);
   }, [original[id]]);
 
+  useEffect(() => {
+    console.log("USE ", cellRef);
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && event.key === "d") {
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+        if (clickedCell) {
+          console.log("cellref", cellRef.current);
+          console.log("clickedcellref", clickedCell.ref);
+          if (clickedCell.ref === cellRef.current) {
+            console.log("clicked");
+            handleControlD();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [table, cellRef, clickedCell]);
+
+  const onCellClick = (rowIndex, columnId) => {
+    const cellId = `${rowIndex}-${columnId}`;
+    console.log("Clicking cell", {
+      rowIndex,
+      columnId,
+      cellId,
+      ref: cellRef.current,
+    });
+    setClickedCell({ rowIndex, columnId, ref: cellRef.current });
+  };
   return (
     <input
+      ref={cellRef}
       style={{
         outline: "none",
         borderRadius: "2px",
@@ -116,6 +180,7 @@ export const customCellRenderer = ({
       onBlur={onBlur}
       onFocus={onFoc}
       readOnly={!isEditable}
+      onClick={() => onCellClick(index, id)}
     />
   );
 };

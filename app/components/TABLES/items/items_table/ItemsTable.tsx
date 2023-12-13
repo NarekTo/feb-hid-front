@@ -85,7 +85,9 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [showModal, setShowModal] = useState(false);
   const [isCopyDownMode, setIsCopyDownMode] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null);
+  const [selectedUpperCell, setSelectedUpperCell] = useState(null);
   const [selectedColumn, setSelectedColumn] = useState(null);
+
   const [points, setPoints] = useState({
     x: 0,
     y: 0,
@@ -160,308 +162,618 @@ export const ItemsTable = React.memo(function ItemsTable({
         id: "job_id",
         header: "Job id",
         accessorKey: "job_id",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "batch_number",
         header: "Batch number",
         accessorKey: "batch_number",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "location_code",
         header: "Location code",
         accessorKey: "location_code",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "item_ref",
         header: "Item ref",
         accessorKey: "item_ref",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
 
       {
         id: "group_number",
         header: "Group number",
         accessorKey: "group_number",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "group_sequence",
         header: "Group sequence",
         accessorKey: "group_sequence",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "item_status",
         header: "Item status",
         accessorKey: "item_status",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "design_ref",
         header: "Design ref",
         accessorKey: "design_ref",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "item_code",
         header: "Item code",
         accessorKey: "item_code",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "additional_description",
         header: "Additional description",
         accessorKey: "additional_description",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "quantity",
         header: "Quantity",
         accessorKey: "quantity",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "spares",
         header: "Spares",
         accessorKey: "spares",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "uom_code",
         header: "UOM Code",
         accessorKey: "uom_code",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "supplier_code",
         header: "Supplier code",
         accessorKey: "supplier_code",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "manufacturer_id",
         header: "Manufacturer id",
         accessorKey: "manufacturer_id",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "part_number",
         header: "Part number",
         accessorKey: "part_number",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "actual_currency",
         header: "Actual currency",
         accessorKey: "actual_currency",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "actual_exchange_rate",
         header: "Actual exchange rate",
         accessorKey: "actual_exchange_rate",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "actual_value",
         header: "Actual value",
         accessorKey: "actual_value",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "budget_currency",
         header: "Budget currency",
         accessorKey: "budget_currency",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "budget_exchange_rate",
         header: "Budget exchange rate",
         accessorKey: "budget_exchange_rate",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "budget_value",
         header: "Budget value",
         accessorKey: "budget_value",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "client_markup",
         header: "Client markup",
         accessorKey: "client_markup",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "client_currency",
         header: "Client currency",
         accessorKey: "client_currency",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "client_exchange_rate",
         header: "Client exchange rate",
         accessorKey: "client_exchange_rate",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "client_value",
         header: "Client value",
         accessorKey: "client_value",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
 
       {
         id: "package_code",
         header: "Package code",
         accessorKey: "package_code",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "supplier_address_id",
         header: "Supplier address id",
         accessorKey: "supplier_address_id",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "del_address_id",
         header: "Del address id",
         accessorKey: "del_address_id",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "delivery_date",
         header: "Delivery date",
         accessorKey: "delivery_date",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "drawing_revision",
         header: "Drawing revision",
         accessorKey: "drawing_revision",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "drawing_issue_date",
         header: "Drawing issue date",
         accessorKey: "drawing_issue_date",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "Inquiry_id",
         header: "Inquiry id",
         accessorKey: "Inquiry_id",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "order_id",
         header: "Order id",
         accessorKey: "order_id",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "order_number",
         header: "Order number",
         accessorKey: "order_number",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "country_of_origin",
         header: "Country of origin",
         accessorKey: "country_of_origin",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "quote_ref",
         header: "Quote ref",
         accessorKey: "quote_ref",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "quote_date",
         header: "Quote date",
         accessorKey: "quote_date",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "shop_drawing",
         header: "Shop drawing",
         accessorKey: "shop_drawing",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "sample",
         header: "Sample",
         accessorKey: "sample",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "inspection",
         header: "Inspection",
         accessorKey: "inspection",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "photograph",
         header: "Photograph",
         accessorKey: "photograph",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "reservation_number",
         header: "Reservation number",
         accessorKey: "reservation_number",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "reservation_date",
         header: "Reservation date",
         accessorKey: "reservation_date",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "specifier_id",
         header: "Specifier id",
         accessorKey: "specifier_id",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "design_notes",
         header: "Design notes",
         accessorKey: "design_notes",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "user_notes",
         header: "User notes",
         accessorKey: "user_notes",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "supplier_notes",
         header: "Supplier notes",
         accessorKey: "supplier_notes",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "created_date",
         header: "Created date",
         accessorKey: "created_date",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
       {
         id: "modified_date",
         header: "Modified date",
         accessorKey: "modified_date",
-        cell: customCellRenderer,
+        cell: (cellProps) => {
+          const cellId = `${cellProps.row.index}-${cellProps.column.id}`;
+          return customCellRenderer({
+            ...cellProps,
+            cellRef: cellRefs.current[cellId],
+          });
+        },
       },
     ],
     [isFiltering]
   );
+  //const cellRefs = useRef(data.map(() => columns.map(() => React.createRef())));
 
+  const cellRefs = useRef({});
+  data.forEach((_, rowIndex) => {
+    columns.forEach((column) => {
+      const cellId = `${rowIndex}-${column.id}`;
+      //console.log("Creating ref", { rowIndex, columnId: column.id, cellId });
+      cellRefs.current[cellId] = React.createRef();
+    });
+  });
+  //  console.log("cell refs", cellRefs.current);
   //------------------------------------TABLE
   const table = useReactTable({
     data: tableData,
@@ -682,13 +994,10 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleCopy = async (cell) => {
-    setSelectedColumn(cell.column.id);
-    setIsCopyDownMode(!isCopyDownMode);
-    const cellValue = cell.getValue();
-    console.log("cell", cellValue);
+    console.log("cell from handlecopy", cell);
     try {
-      await navigator.clipboard.writeText(cellValue);
-      console.log("Cell value copied to clipboard");
+      await navigator.clipboard.writeText(cell);
+      console.log("Cell value copied to clipboard" + cell);
     } catch (err) {
       console.error("Failed to copy text: ", err);
     }
@@ -703,6 +1012,16 @@ export const ItemsTable = React.memo(function ItemsTable({
     );
     if (!isAnyRowSelected) {
       setSelectedRow(actualRow);
+    }
+  };
+
+  const onCellClick = (cell) => {
+    setSelectedCell(cell);
+    setSelectedColumn(cell.column.id);
+    // Log the cell above if it exists
+    if (cell.row.index > 0) {
+      const aboveCell = tableData[cell.row.index - 1][cell.column.id];
+      setSelectedUpperCell(aboveCell);
     }
   };
 
@@ -740,6 +1059,12 @@ export const ItemsTable = React.memo(function ItemsTable({
     setOpeningMenu(!openingMenu);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === "Tab") {
+      setIsCopyDownMode((prevMode) => !prevMode);
+    }
+  };
+
   //----------------------------------USE EFFECTS AND SOCKETS
   useEffect(() => {
     const columnFilters = table.getState().columnFilters;
@@ -761,6 +1086,8 @@ export const ItemsTable = React.memo(function ItemsTable({
         setSelectedRow(null);
       }
     };
+    window.addEventListener("keydown", handleKeyDown);
+
     document.addEventListener("click", handleOutsideClick);
     window.addEventListener("click", handleClick);
 
@@ -823,6 +1150,8 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     return () => {
       socket.close();
+      window.removeEventListener("keydown", handleKeyDown);
+
       document.removeEventListener("click", handleOutsideClick);
       window.removeEventListener("click", handleClick);
     };
@@ -858,7 +1187,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           <DuplicateButton description="Duplicate" onclick={handleDuplicate} />
           <CopyButton
             toggle={isCopyDownMode}
-            description="Copy"
+            description="Copy Down"
             onclick={() => (selectedRow ? handleCopy(selectedCell) : null)}
           />
         </div>
@@ -949,14 +1278,6 @@ export const ItemsTable = React.memo(function ItemsTable({
                       cellMeta.getCellContext &&
                       cellMeta.getCellContext(cellContext);
 
-                    const isSelectedColumn =
-                      cell.column.id === selectedColumn && isCopyDownMode;
-
-                    const cellStyles = {
-                      backgroundColor: isSelectedColumn
-                        ? "#d9e1f2"
-                        : "transparent",
-                    };
                     return (
                       <td
                         onClick={
@@ -965,9 +1286,9 @@ export const ItemsTable = React.memo(function ItemsTable({
                                 handleItemClick(
                                   Number(cell.row.original.Item_id)
                                 )
-                            : () => setSelectedCell(cell)
+                            : () => onCellClick(cell)
                         }
-                        style={{ ...rowStyles, ...cellStyles }}
+                        style={{ ...rowStyles }}
                         key={cell.id}
                         className={`py-2 ${index === 1 ? "px-0 " : "px-2"}`}
                         {...cellContextProps}
