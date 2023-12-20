@@ -8,7 +8,7 @@ import { RootLayoutProps } from "./types";
 const rubik = Rubik({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "HESCO SOFTWARE",
+  title: "HESCO MGMT SOFTWARE",
   description: "Coded by the Hid it crew in Madrid",
 };
 

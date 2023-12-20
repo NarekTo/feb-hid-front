@@ -53,3 +53,8 @@ export const useProjectStore = create<ProjectStore>((set) => ({
   projectInfo: null,
   setProjectInfo: (info: ProjectProjects | null) => set({ projectInfo: info }),
 }));
+
+interface Store {
+  refNames: string[];
+  setRefNames: (newRefNames: string[]) => void;
+}

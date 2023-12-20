@@ -9,6 +9,7 @@ import { SortingFn, sortingFns } from "@tanstack/react-table";
 import { compareItems } from "@tanstack/match-sorter-utils";
 import { useSession } from "next-auth/react";
 import { updateRow } from "../../../../../utils/api";
+import { useOptionStore } from "../../../../../store/store";
 
 // --
 interface LockCellRendererProps {
@@ -32,7 +33,8 @@ interface CustomCellRendererProps {
   row: { index: number; original: ProjectItems };
   column: { id: string };
   table: any;
-  cellRef; // replace 'any' with the actual type of 'table'
+  cellRef;
+  cellRefs; // replace 'any' with the actual type of 'table'
 }
 
 //-----------------------------------------------calculations for adding and sorting rows-------------------------------------------------------------
@@ -78,39 +80,48 @@ export const customCellRenderer = ({
   column: { id },
   table,
   cellRef,
+  cellRefs,
 }: CustomCellRendererProps) => {
   const { data: session } = useSession() as { data: Session | null };
   const initialValue = original[id];
   const [value, setValue] = useState(initialValue);
   const [isEditable, setIsEditable] = useState(false);
+  const [cellAbove, setCellAbove] = useState(null);
   const [clickedCell, setClickedCell] = useState(null);
-
+  const [cellBelow, setCellBelow] = useState(null);
   const Item_id = original.Item_id;
+  const [focusedCell, setFocusedCell] = useState<{
+    index: number;
+    id: string;
+  } | null>(null);
 
-  //console.log("cell ref", cellRef);
+  const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
+
+  const setValueWithCallback = (newValue, callback) => {
+    setValue(newValue);
+    callback();
+  };
   const handleControlD = () => {
-    console.log("clicked control d");
-    const tableData = table.getRowModel();
-    if (
-      index > 0 &&
-      tableData.rows[index - 1] &&
-      id in tableData.rows[index - 1].original
-    ) {
-      const aboveCell = tableData.rows[index - 1].original[id];
-      setValue(aboveCell);
-      onBlur(); // Save the value
-      if (tableData.rows[index + 1]) {
-        console.log(
-          "tableData.rows[index + 1]",
-          tableData.rows[index + 1].original[id]
-        );
-        // If there is a row below
-        // Set the focus to the cell below after a delay to allow the onBlur function to finish
-        setTimeout(() => tableData.rows[index + 1].original[id].focus(), 0);
+    console.log("handleControlD called");
+    if (focusedCell && focusedCell.index > 0) {
+      const cellAboveId = `${focusedCell.index - 1}-${focusedCell.id}`;
+      console.log("cellAboveId:", cellAboveId);
+      if (cellRefs[cellAboveId]) {
+        const aboveCellValue = cellRefs[cellAboveId].current.value;
+        console.log("aboveCellValue:", aboveCellValue);
+        setValue(aboveCellValue);
+        onBlur(); // Save the value
+
+        const cellBelowId = `${focusedCell.index + 1}-${focusedCell.id}`;
+        console.log("cellBelowId:", cellBelowId);
+        if (cellRefs[cellBelowId]) {
+          console.log("Moving focus to cell below");
+          cellRefs[cellBelowId]?.current?.focus();
+          setFocusedCell({ index: focusedCell.index + 1, id: focusedCell.id });
+        }
       }
     }
   };
-
   const onBlur = async () => {
     if (value !== initialValue) {
       const updated = await updateRow(Item_id, { [id]: value }, session);
@@ -125,42 +136,92 @@ export const customCellRenderer = ({
   };
 
   useEffect(() => {
-    setValue(original[id]);
-  }, [original[id]]);
+    if (value !== initialValue) {
+      onBlur();
+    }
+  }, [value]);
 
   useEffect(() => {
-    console.log("USE ", cellRef);
     const handleKeyDown = (event) => {
-      if (event.ctrlKey && event.key === "d") {
-        if (event.cancelable) {
+      if (focusedCell) {
+        if (event.ctrlKey && event.key === "d") {
+          event.stopPropagation();
           event.preventDefault();
-        }
-        if (clickedCell) {
-          console.log("cellref", cellRef.current);
-          console.log("clickedcellref", clickedCell.ref);
-          if (clickedCell.ref === cellRef.current) {
-            console.log("clicked");
-            handleControlD();
+          handleControlD();
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          if (focusedCell.index > 0) {
+            const cellAboveId = `${focusedCell.index - 1}-${focusedCell.id}`;
+            if (cellRefs[cellAboveId]) {
+              cellRefs[cellAboveId]?.current?.focus();
+              setFocusedCell({
+                index: focusedCell.index - 1,
+                id: focusedCell.id,
+              });
+            }
+          }
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          const cellBelowId = `${focusedCell.index + 1}-${focusedCell.id}`;
+          if (cellRefs[cellBelowId]) {
+            cellRefs[cellBelowId]?.current?.focus();
+            setFocusedCell({
+              index: focusedCell.index + 1,
+              id: focusedCell.id,
+            });
+          }
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          const columns = table
+            .getAllLeafColumns()
+            .filter((column) => column.getIsVisible());
+          const columnIndex = columns.findIndex(
+            (column) => column.id === focusedCell.id
+          );
+          if (columnIndex < columns.length - 1) {
+            const cellRightId = `${focusedCell.index}-${
+              columns[columnIndex + 1].id
+            }`;
+            if (cellRefs[cellRightId]) {
+              cellRefs[cellRightId]?.current?.focus();
+              setFocusedCell({
+                index: focusedCell.index,
+                id: columns[columnIndex + 1].id,
+              });
+            }
+          }
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          const columns = table
+            .getAllLeafColumns()
+            .filter((column) => column.getIsVisible());
+          const columnIndex = columns.findIndex(
+            (column) => column.id === focusedCell.id
+          );
+          if (columnIndex > 0) {
+            const cellLeftId = `${focusedCell.index}-${
+              columns[columnIndex - 1].id
+            }`;
+            if (cellRefs[cellLeftId]) {
+              cellRefs[cellLeftId]?.current?.focus();
+              setFocusedCell({
+                index: focusedCell.index,
+                id: columns[columnIndex - 1].id,
+              });
+            }
           }
         }
-      }
+      } // Add this line
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [table, cellRef, clickedCell]);
+  }, [focusedCell, cellRefs]);
 
   const onCellClick = (rowIndex, columnId) => {
-    const cellId = `${rowIndex}-${columnId}`;
-    console.log("Clicking cell", {
-      rowIndex,
-      columnId,
-      cellId,
-      ref: cellRef.current,
-    });
-    setClickedCell({ rowIndex, columnId, ref: cellRef.current });
+    setFocusedCell({ index: rowIndex, id: columnId });
   };
   return (
     <input
@@ -410,3 +471,84 @@ export const deleteRow = async (itemId: string, session: Session | null) => {
     console.error("Error deleting row:", error);
   }
 };
+
+/*
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && event.key === "d") {
+        event.stopPropagation();
+        event.preventDefault();
+
+        if (clickedCell && clickedCell.ref === cellRef.current) {
+          console.log("ctrld works");
+          // console.log("ctrld cell ref", cellRef.current);
+          handleControlD();
+        }
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (index > 0) {
+          const cellAboveId = `${index - 1}-${id}`;
+          if (cellRefs[cellAboveId]) {
+            cellRefs[cellAboveId]?.current?.focus();
+          }
+        }
+      } else if (event.key === "ArrowDown") {
+        ("concole log arrow down");
+        event.preventDefault();
+        const cellBelowId = `${index + 1}-${id}`;
+        if (cellRefs[cellBelowId]) {
+          cellRefs[cellBelowId]?.current?.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [table, cellRef, clickedCell, index]);
+
+  const onCellClick = (rowIndex, columnId) => {
+    "calling on cell click";
+    const cellAboveRowIndex = index - 1;
+    const cellAboveCellId = `${cellAboveRowIndex}-${id}`;
+    const cellBelowRowIndex = index + 1;
+    const cellBelowCellId = `${cellBelowRowIndex}-${id}`;
+
+    setClickedCell({ rowIndex, columnId, ref: cellRef.current });
+    console.log("clicked cell", {
+      rowIndex,
+      columnId,
+      ref: cellRef.current,
+    });
+    // Set cell above if it exists
+    if (cellAboveRowIndex >= 0 && cellRefs[cellAboveCellId]) {
+      setCellAbove({
+        rowIndex: cellAboveRowIndex,
+        columnId: id,
+        ref: cellRefs[cellAboveCellId].current,
+      });
+      console.log("cell above", {
+        rowIndex: cellAboveRowIndex,
+        columnId: id,
+        ref: cellRefs[cellAboveCellId].current,
+      });
+    }
+
+    // Set cell below if it exists
+    if (cellRefs[cellBelowCellId]) {
+      setCellBelow({
+        rowIndex: cellBelowRowIndex,
+        columnId: id,
+        ref: cellRefs[cellBelowCellId].current,
+      });
+      console.log("cell below", {
+        rowIndex: cellBelowRowIndex,
+        columnId: id,
+        ref: cellRefs[cellBelowCellId].current,
+      });
+    }
+  };
+
+*/

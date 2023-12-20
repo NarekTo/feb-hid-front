@@ -31,7 +31,6 @@ import {
 } from "./functions/items_table_fns";
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { ProjectItems, Session } from "../../../../types";
-import { useOptionStore } from "../../../../store/store";
 import { ContextMenu } from "./components/topMenu/ContextMenu";
 import { fuzzyFilter } from "./components/Filter";
 import { Filter } from "./components/Filter";
@@ -48,7 +47,7 @@ import Modal from "../../../UI_SECTIONS/page/Modal";
 import { addRow, changeRowStatus, fetchRowData } from "../../../../utils/api";
 import { DuplicateButton } from "./components/topMenu/DuplicateButton";
 import { CopyButton } from "./components/topMenu/CopyButton";
-
+import { useOptionStore } from "../../../../store/store";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -102,6 +101,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const tableRef = useRef(null);
   const virtualRef = useRef(null);
   const job_id = searchParams.get("job_id") as string;
+  const tbodyRef = useRef(null);
 
   //------------------------------------ZUSTAND store
   const selectedRow = useOptionStore((state) => state.selectedRow); // row selected by click
@@ -167,6 +167,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -179,6 +180,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -191,6 +193,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -203,6 +206,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -216,6 +220,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -228,6 +233,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -240,6 +246,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -252,6 +259,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -264,6 +272,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -276,6 +285,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -288,6 +298,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -300,6 +311,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -312,6 +324,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -324,6 +337,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -336,6 +350,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -348,6 +363,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -360,6 +376,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -372,6 +389,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -384,6 +402,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -396,6 +415,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -408,6 +428,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -420,6 +441,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -432,6 +454,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -444,6 +467,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -456,6 +480,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -468,6 +493,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -481,6 +507,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -493,6 +520,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -505,6 +533,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -517,6 +546,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -529,6 +559,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -541,6 +572,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -553,6 +585,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -565,6 +598,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -577,6 +611,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -589,6 +624,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -601,6 +637,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -613,6 +650,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -625,6 +663,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -637,6 +676,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -649,6 +689,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -661,6 +702,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -673,6 +715,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -685,6 +728,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -697,6 +741,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -709,6 +754,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -721,6 +767,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -733,6 +780,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -745,6 +793,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -757,6 +806,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           return customCellRenderer({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
+            cellRefs: cellRefs.current,
           });
         },
       },
@@ -769,10 +819,11 @@ export const ItemsTable = React.memo(function ItemsTable({
   data.forEach((_, rowIndex) => {
     columns.forEach((column) => {
       const cellId = `${rowIndex}-${column.id}`;
-      //console.log("Creating ref", { rowIndex, columnId: column.id, cellId });
-      cellRefs.current[cellId] = React.createRef();
+      cellRefs.current[cellId] = useRef();
+      //setRefNames(prevRefNames => [...prevRefNames, cellId]);
     });
   });
+
   //  console.log("cell refs", cellRefs.current);
   //------------------------------------TABLE
   const table = useReactTable({
@@ -1004,6 +1055,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   //------------------------------------SELECT FILTERS & LINK ROW FUNCTIONS
+
   const onRowClick = (row: Row<ProjectItems>) => {
     setSelectedRow(null); // Deselect the row
     const actualRow = row.original;
@@ -1015,7 +1067,8 @@ export const ItemsTable = React.memo(function ItemsTable({
     }
   };
 
-  const onCellClick = (cell) => {
+  const onCellClick = (cell, index) => {
+    // console.log("cell clicked", cell);
     setSelectedCell(cell);
     setSelectedColumn(cell.column.id);
     // Log the cell above if it exists
@@ -1259,12 +1312,13 @@ export const ItemsTable = React.memo(function ItemsTable({
               </tr>
             ))}
           </thead>
-          <tbody>
+          <tbody ref={tbodyRef}>
             {table.getRowModel().rows.map((row, index) => {
               const rowStyles = getRowStyles(row, index);
 
               return (
                 <tr
+                  tabIndex={0}
                   onClick={() => onRowClick(row)}
                   key={row.id}
                   className="font-normal border-b "
@@ -1280,13 +1334,14 @@ export const ItemsTable = React.memo(function ItemsTable({
 
                     return (
                       <td
+                        tabIndex={index}
                         onClick={
                           cell.column.id === "Item_id"
                             ? () =>
                                 handleItemClick(
                                   Number(cell.row.original.Item_id)
                                 )
-                            : () => onCellClick(cell)
+                            : () => onCellClick(cell, index)
                         }
                         style={{ ...rowStyles }}
                         key={cell.id}
