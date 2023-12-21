@@ -933,6 +933,7 @@ export const ItemsTable = React.memo(function ItemsTable({
       }
     }
     if (kind === "primary") {
+      newTableRow.location_code = "";
       newTableRow.group_number = highest;
       newTableRow.group_sequence = "1";
     }
@@ -1064,17 +1065,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     );
     if (!isAnyRowSelected) {
       setSelectedRow(actualRow);
-    }
-  };
-
-  const onCellClick = (cell, index) => {
-    // console.log("cell clicked", cell);
-    setSelectedCell(cell);
-    setSelectedColumn(cell.column.id);
-    // Log the cell above if it exists
-    if (cell.row.index > 0) {
-      const aboveCell = tableData[cell.row.index - 1][cell.column.id];
-      setSelectedUpperCell(aboveCell);
     }
   };
 
@@ -1341,7 +1331,7 @@ export const ItemsTable = React.memo(function ItemsTable({
                                 handleItemClick(
                                   Number(cell.row.original.Item_id)
                                 )
-                            : () => onCellClick(cell, index)
+                            : () => console.log("not item id")
                         }
                         style={{ ...rowStyles }}
                         key={cell.id}

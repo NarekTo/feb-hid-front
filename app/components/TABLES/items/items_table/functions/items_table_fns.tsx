@@ -94,13 +94,8 @@ export const customCellRenderer = ({
     index: number;
     id: string;
   } | null>(null);
-
   const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
 
-  const setValueWithCallback = (newValue, callback) => {
-    setValue(newValue);
-    callback();
-  };
   const handleControlD = () => {
     console.log("handleControlD called");
     if (focusedCell && focusedCell.index > 0) {
@@ -123,7 +118,10 @@ export const customCellRenderer = ({
     }
   };
   const onBlur = async () => {
-    if (value !== initialValue) {
+    if (value.trim() !== initialValue.trim()) {
+      console.log("value", value);
+      console.log("initial value", initialValue);
+
       const updated = await updateRow(Item_id, { [id]: value }, session);
       if (updated) {
         setValue(value);
@@ -135,12 +133,7 @@ export const customCellRenderer = ({
     setIsEditable(true);
   };
 
-  useEffect(() => {
-    if (value !== initialValue) {
-      onBlur();
-    }
-  }, [value]);
-
+  /*
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (focusedCell) {
@@ -219,6 +212,10 @@ export const customCellRenderer = ({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [focusedCell, cellRefs]);
+*/
+  useEffect(() => {
+    setValue(original[id]);
+  }, [original[id]]);
 
   const onCellClick = (rowIndex, columnId) => {
     setFocusedCell({ index: rowIndex, id: columnId });
@@ -237,7 +234,7 @@ export const customCellRenderer = ({
       }`}
       className={`focus:outline-none focus:ring focus:border-blue-500`}
       value={value || ""}
-      onChange={(e) => setValue(e.target.value)}
+      onChange={(e) => setValue(e.target.value.trim())}
       onBlur={onBlur}
       onFocus={onFoc}
       readOnly={!isEditable}
