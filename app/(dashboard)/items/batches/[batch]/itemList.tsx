@@ -25,7 +25,7 @@ const ItemList: React.FC<ItemsProps> = ({ items, batchNum }) => {
   }, [items]);
 
   return (
-    <div className="w-full px-2">
+    <div className="w-full px-2 ">
       <TitleHeader
         firstLabel="Project"
         firstValue={name}

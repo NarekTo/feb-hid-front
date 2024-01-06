@@ -10,7 +10,11 @@ export default function Login() {
   const router = useRouter();
   const [err, setErr] = useState<string>("");
 
-  const handleSubmit = async (e: FormEvent, username: string, password: string) => {
+  const handleSubmit = async (
+    e: FormEvent,
+    username: string,
+    password: string
+  ) => {
     e.preventDefault();
     try {
       const res = await signIn("credentials", {
@@ -31,7 +35,7 @@ export default function Login() {
   };
 
   return (
-    <main className="flex flex-col justify-around items-center gap-40">
+    <main className="w-screen flex flex-col justify-around items-center gap-40 ">
       <AuthForm handleSubmit={handleSubmit} />
       {err && <p>{err}</p>}
       <ForgotPassword />

@@ -54,7 +54,23 @@ export const useProjectStore = create<ProjectStore>((set) => ({
   setProjectInfo: (info: ProjectProjects | null) => set({ projectInfo: info }),
 }));
 
-interface Store {
-  refNames: string[];
-  setRefNames: (newRefNames: string[]) => void;
-}
+//i want the clicke cell to be like this {index: 1, id: 'location_code'}
+type ClickedCellState = {
+  clickedCell: { index: number; id: string } | null;
+  setClickedCell: (cell: { index: number; id: string } | null) => void;
+};
+
+export const useClickedCellStore = create<ClickedCellState>((set) => ({
+  clickedCell: null,
+  setClickedCell: (cell) => set({ clickedCell: cell }),
+}));
+
+type StoredValueState = {
+  storedValue: any | null;
+  setStoredValue: (value: any | null) => void;
+};
+
+export const useStoredValueStore = create<StoredValueState>((set) => ({
+  storedValue: null,
+  setStoredValue: (value) => set({ storedValue: value }),
+}));

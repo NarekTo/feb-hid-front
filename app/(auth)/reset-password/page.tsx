@@ -1,7 +1,7 @@
- 'use client'
+"use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from "next/navigation";
 import MainInput from "../../components/UI_ATOMS/MainInput";
 import MainButton from "../../components/UI_ATOMS/MainButton";
 
@@ -14,21 +14,27 @@ export default function ResetPassword() {
   const [message, setMessage] = useState<string>("");
   const searchParams = useSearchParams();
 
-  const token = searchParams.get('token');
+  const token = searchParams.get("token");
 
-  const handleResetPassword = async (password: string, confirmPassword: string) => {
+  const handleResetPassword = async (
+    password: string,
+    confirmPassword: string
+  ) => {
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
     try {
-      const response = await fetch(`http://localhost:3000/password-reset/reset?token=${token}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ user_id: userId, newPassword: password }),
-      });
+      const response = await fetch(
+        `http://localhost:3000/password-reset/reset?token=${token}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ user_id: userId, newPassword: password }),
+        }
+      );
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -56,14 +62,17 @@ export default function ResetPassword() {
   useEffect(() => {
     if (message) {
       setTimeout(() => {
-        router.push('/login');
+        router.push("/login");
       }, 2000); // Redirect after 2 seconds
     }
   }, [message, router]);
 
   return (
-    <div className="h-full justify-center flex w-full items-center ">
-      <form onSubmit={handleSubmit} className="items-start flex flex-col gap-4">
+    <div className="h-full flex items-start pt-28 justify-center w-screen ">
+      <form
+        onSubmit={handleSubmit}
+        className="items-center flex flex-col gap-4"
+      >
         <MainInput
           type="text"
           title="User Id"
@@ -92,7 +101,11 @@ export default function ResetPassword() {
             required
           />
         </label>
-        <MainButton style={{ marginTop: "20px", backgroundColor: "#144265" }} type="submit" title="Reset Password" />
+        <MainButton
+          style={{ marginTop: "20px", backgroundColor: "#144265" }}
+          type="submit"
+          title="Reset Password"
+        />
 
         {error && <p>{error}</p>}
         {message && <p>{message}</p>}

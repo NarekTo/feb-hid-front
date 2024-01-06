@@ -4,9 +4,11 @@ import { Session } from "../types";
 import { useState, useEffect } from "react";
 import AllItemsChart from "../components/CHARTS/Alltemscharts";
 import MainTable from "../components/TABLES/MainTable";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const DashboardList = ({ userProjects }) => {
+  const router = useRouter();
   const { data: session } = useSession() as { data: Session | null };
   const allProjects = userProjects.userProjects; // Fetch or define your projects here
   const [selectedProject, setSelectedProject] = useState(allProjects[0]);
@@ -21,18 +23,37 @@ const DashboardList = ({ userProjects }) => {
       const allItems = [];
 
       for (const project of allProjects) {
-        const res = await fetch(
-          `http://localhost:3000/items/project/${project.job_id}`,
+        try {
+          const res = await fetch(
+            `http://localhost:3000/items/project/${project.job_id}`,
 
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.accessToken}`,
-            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.accessToken}`,
+              },
+            }
+          );
+
+          if (res.status === 401) {
+            console.log("checking for 401");
+            // Redirect to "Change Password" page
+            signOut();
+            router.push("/login");
+          } else if (res.ok) {
+            const items = await res.json();
+            allItems.push(items);
           }
-        );
-        const items = await res.json();
-        allItems.push(items);
+        } catch (err) {
+          console.log("error: ", err);
+          if (err.status === 401) {
+            // Redirect to "Change Password" page
+            signOut();
+            router.push("/login");
+          } else {
+            throw err;
+          }
+        }
       }
 
       setTableItems(allItems);

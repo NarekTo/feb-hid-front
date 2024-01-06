@@ -43,7 +43,7 @@ const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       <div className="w-1/8">
         <Menu items={items} />
       </div>
-      <div className="flex-grow ">{children}</div>
+      <div className="flex-grow overflow-x-auto">{children}</div>
     </div>
   );
 };

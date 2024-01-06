@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { MainListBox } from "./MainListBox";
 import MainChart from "./MainChart";
 import { ProjectProjects, Session } from "../../types";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { getStatusName } from "../../utils/constants";
+import { useRouter } from "next/navigation";
 
 interface AllItemsChartProps {
   allProjects: ProjectProjects[];
@@ -22,6 +23,7 @@ const AllItemsChart: React.FC<AllItemsChartProps> = ({
 }) => {
   const { data: session } = useSession() as { data: Session | null };
 
+  const router = useRouter();
   const [chartItems, setChartItems] = useState([]);
   useEffect(() => {
     const fetchItems = async () => {
@@ -35,9 +37,20 @@ const AllItemsChart: React.FC<AllItemsChartProps> = ({
             },
           }
         );
-        const items = await res.json();
-
-        setChartItems(items);
+        console.log("res", res);
+        if (res.status === 401) {
+          console.log("checking for 401");
+          // Redirect to "Change Password" page
+          signOut();
+          router.push("/login");
+        } else if (!res.ok) {
+          {
+            throw new Error("Failed to fetch data");
+          }
+        } else {
+          const items = await res.json();
+          setChartItems(items);
+        }
       }
     };
 

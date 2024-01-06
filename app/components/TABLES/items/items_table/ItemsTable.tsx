@@ -47,7 +47,11 @@ import Modal from "../../../UI_SECTIONS/page/Modal";
 import { addRow, changeRowStatus, fetchRowData } from "../../../../utils/api";
 import { DuplicateButton } from "./components/topMenu/DuplicateButton";
 import { CopyButton } from "./components/topMenu/CopyButton";
-import { useOptionStore } from "../../../../store/store";
+import {
+  useClickedCellStore,
+  useOptionStore,
+  useStoredValueStore,
+} from "../../../../store/store";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -83,10 +87,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [clicked, setClicked] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [isCopyDownMode, setIsCopyDownMode] = useState(false);
-  const [selectedCell, setSelectedCell] = useState(null);
-  const [selectedUpperCell, setSelectedUpperCell] = useState(null);
   const [selectedColumn, setSelectedColumn] = useState(null);
-
   const [points, setPoints] = useState({
     x: 0,
     y: 0,
@@ -107,6 +108,10 @@ export const ItemsTable = React.memo(function ItemsTable({
   const selectedRow = useOptionStore((state) => state.selectedRow); // row selected by click
   const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
 
+  const selectedCell = useClickedCellStore((state) => state.clickedCell);
+  const setSelectedCell = useClickedCellStore((state) => state.setClickedCell);
+
+  const { storedValue, setStoredValue } = useStoredValueStore();
   //------------------------------------COLUMNS
   const columns: ColumnDef<ProjectItems>[] = useMemo(
     () => [
@@ -168,6 +173,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -181,6 +187,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -194,6 +201,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -207,6 +215,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -221,6 +230,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -234,6 +244,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -247,6 +258,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -260,6 +272,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -273,6 +286,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -286,6 +300,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -299,6 +314,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -312,6 +328,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -325,6 +342,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -338,6 +356,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -351,6 +370,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -364,6 +384,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -377,6 +398,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -390,6 +412,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -403,6 +426,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -416,6 +440,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -429,6 +454,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -442,6 +468,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -455,6 +482,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -468,6 +496,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -481,6 +510,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -494,6 +524,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -508,6 +539,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -521,6 +553,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -534,6 +567,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -547,6 +581,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -560,6 +595,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -573,6 +609,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -586,6 +623,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -599,6 +637,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -612,6 +651,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -625,6 +665,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -638,6 +679,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -651,6 +693,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -664,6 +707,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -677,6 +721,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -690,6 +735,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -703,6 +749,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -716,6 +763,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -729,6 +777,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -742,6 +791,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -755,6 +805,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -768,6 +819,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -781,6 +833,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -794,6 +847,7 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
@@ -807,13 +861,13 @@ export const ItemsTable = React.memo(function ItemsTable({
             ...cellProps,
             cellRef: cellRefs.current[cellId],
             cellRefs: cellRefs.current,
+            setTableData,
           });
         },
       },
     ],
     [isFiltering]
   );
-  //const cellRefs = useRef(data.map(() => columns.map(() => React.createRef())));
 
   const cellRefs = useRef({});
   data.forEach((_, rowIndex) => {
@@ -1046,12 +1100,15 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleCopy = async (cell) => {
-    console.log("cell from handlecopy", cell);
-    try {
-      await navigator.clipboard.writeText(cell);
-      console.log("Cell value copied to clipboard" + cell);
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
+    const rowIndex = cell && cell.row.index;
+    const col = cell && cell.column.columnDef.id;
+    if (rowIndex !== 0) {
+      const aboveCell = tableData[rowIndex - 1][col];
+      setSelectedCell({ index: rowIndex, id: col });
+
+      setStoredValue(aboveCell);
+
+      setSelectedColumn(col);
     }
   };
 
@@ -1103,8 +1160,8 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleKeyDown = (event) => {
-    if (event.key === "Tab") {
-      setIsCopyDownMode((prevMode) => !prevMode);
+    if (event.ctrlKey && event.key === "d") {
+      event.preventDefault();
     }
   };
 
@@ -1127,6 +1184,7 @@ export const ItemsTable = React.memo(function ItemsTable({
     const handleOutsideClick = (event: MouseEvent) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
         setSelectedRow(null);
+        setSelectedColumn(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -1229,9 +1287,9 @@ export const ItemsTable = React.memo(function ItemsTable({
           <DeleteButton description="Delete" onclick={handleDelete} />
           <DuplicateButton description="Duplicate" onclick={handleDuplicate} />
           <CopyButton
-            toggle={isCopyDownMode}
+            toggle={selectedColumn}
             description="Copy Down"
-            onclick={() => (selectedRow ? handleCopy(selectedCell) : null)}
+            onclick={() => setSelectedColumn(null)}
           />
         </div>
         {openingMenu && (
@@ -1331,7 +1389,7 @@ export const ItemsTable = React.memo(function ItemsTable({
                                 handleItemClick(
                                   Number(cell.row.original.Item_id)
                                 )
-                            : () => console.log("not item id")
+                            : () => handleCopy(cell)
                         }
                         style={{ ...rowStyles }}
                         key={cell.id}
