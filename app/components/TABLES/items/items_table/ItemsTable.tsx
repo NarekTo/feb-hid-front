@@ -1359,29 +1359,34 @@ export const ItemsTable = React.memo(function ItemsTable({
   const handlePaste = async () => {
     const marked = await fetchItemDetails(markedRow.Item_id, session);
     const selectedRows = getSelectedRows(rowSelection, tableData);
-
-    // Check if all selected rows have a status_code that allows updating
     const canUpdateAll = selectedRows.every((row) =>
       ["IB", "ID", "IDR", "IXH"].includes(row.status_code)
     );
-    console.log("can update all", !canUpdateAll);
+
     if (!canUpdateAll) {
+      console.log("action", action);
+      console.log("options", checkboxOptions);
       console.log("getting info from", marked);
       console.log("mergin info to selected rows", selectedRows);
-      /*
-      const updatePromises = selectedRows.map((row) => {
-        return updateRow(row.Item_id, merge, session).catch((error) => {
-          errors.push(`Failed to update item ${row.Item_id}: ${error}`);
-        });
-      });
-      await Promise.all(updatePromises);
-      if (errors.length > 0) {
-        console.error("Some rows failed to update:", errors);
-        // Handle errors (e.g., show a notification to the user)
-      }
 
-      // Optionally, you can alert the user or handle this case differently
-      return;
+      handleMerge(marked, checkboxOptions, selectedRows);
+      /*
+      if (marked) {
+        // Replace with your actual condition
+
+        // Show the modal with the success message
+        setShowModal(true);
+        setModalConfig({
+          text: `Items successfully pasted from row ${
+            markedRow.Item_id
+          } to row(s) ${selectedRows.map((row) => row.Item_id).join(", ")}.`,
+          button1Text: "OK",
+          button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
+          button2Text: "",
+          button2Action: () => {},
+        });
+        setRowSelection({});
+      }
       */
     } else {
       console.error(
@@ -1390,7 +1395,28 @@ export const ItemsTable = React.memo(function ItemsTable({
     }
     setMarkedRow(null);
   };
+  const handleMerge = async (marked, options, selectedRows) => {
+    if (action === "merge") {
+      // Filter out the keys from options which are true
+      const keysToUpdate = Object.keys(options).filter((key) => options[key]);
 
+      // Iterate over each selected row
+      selectedRows.forEach((row) => {
+        keysToUpdate.forEach((key) => {
+          // Check if the marked object has the data for the current key
+          if (marked[key]) {
+            // Update or copy the data from marked to the selected row
+            row[key] = marked[key];
+          }
+        });
+      });
+      console.log("selected rows", selectedRows);
+      // Return the updated selected rows
+      return selectedRows;
+    }
+  };
+
+  // Call handleMerge where appropriate, for example, after a button click
   return (
     <div ref={tableRef}>
       <Modal
