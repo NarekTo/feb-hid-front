@@ -20,6 +20,7 @@ import {
   down,
   fuzzySort,
   getHighestItemId,
+  getSelectedRows,
   idCellRenderer,
   lockCellRenderer,
   newRow,
@@ -42,16 +43,21 @@ import { io } from "socket.io-client";
 import TopMenuButton from "./components/topMenu/TopMenuButton";
 import { AddButton } from "./components/topMenu/AddButton";
 import HideCheckBox from "./components/HideCheckBox";
-import { DeleteButton } from "./components/topMenu/DeleteButton";
 import Modal from "../../../UI_SECTIONS/page/Modal";
-import { addRow, changeRowStatus, fetchRowData } from "../../../../utils/api";
-import { DuplicateButton } from "./components/topMenu/DuplicateButton";
+import {
+  addRow,
+  changeRowStatus,
+  fetchItemDetails,
+  fetchRowData,
+  updateRow,
+} from "../../../../utils/api";
 import { CopyButton } from "./components/topMenu/CopyButton";
 import {
   useClickedCellStore,
   useOptionStore,
-  useStoredValueStore,
+  useStoreMark,
 } from "../../../../store/store";
+import MarkModal from "./components/ModalMark";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -85,13 +91,13 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [openingMenu, setOpeningMenu] = useState(false);
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
   const [clicked, setClicked] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [isCopyDownMode, setIsCopyDownMode] = useState(false);
+
   const [selectedColumn, setSelectedColumn] = useState(null);
   const [points, setPoints] = useState({
     x: 0,
     y: 0,
   });
+  const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({
     text: "",
     button1Text: "",
@@ -99,6 +105,8 @@ export const ItemsTable = React.memo(function ItemsTable({
     button2Text: "",
     button2Action: () => {},
   });
+  const [showMarkModal, setShowMarkModal] = useState(false);
+  const [markedRow, setMarkedRow] = useState(null);
   const tableRef = useRef(null);
   const virtualRef = useRef(null);
   const job_id = searchParams.get("job_id") as string;
@@ -107,11 +115,11 @@ export const ItemsTable = React.memo(function ItemsTable({
   //------------------------------------ZUSTAND store
   const selectedRow = useOptionStore((state) => state.selectedRow); // row selected by click
   const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
-
-  const selectedCell = useClickedCellStore((state) => state.clickedCell);
   const setSelectedCell = useClickedCellStore((state) => state.setClickedCell);
+  const selectedCell = useClickedCellStore((state) => state.clickedCell);
+  const { setAction, action, setCheckboxOptions, checkboxOptions } =
+    useStoreMark();
 
-  const { storedValue, setStoredValue } = useStoredValueStore();
   //------------------------------------COLUMNS
   const columns: ColumnDef<ProjectItems>[] = useMemo(
     () => [
@@ -994,17 +1002,10 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     addRow(newTableRow, session); //DB POST api call
   };
+
   const handleDelete = () => {
     // Get the selected rows
-    const selectedRows =
-      Object.keys(rowSelection).length > 0
-        ? Object.entries(rowSelection)
-            .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
-            .map(([key]) => tableData[key])
-        : selectedRow
-        ? [selectedRow]
-        : [];
-
+    const selectedRows = getSelectedRows(rowSelection, tableData);
     if (selectedRows.length === 0) {
       console.error("No row selected");
       return;
@@ -1044,18 +1045,25 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleConfirmDelete = async (rowsToDelete) => {
-    console.log("clicked delete");
-    // Get the selected rows
-    const selectedRows = rowsToDelete;
+    const errors = [];
+    const deletePromises = rowsToDelete.map((row) => {
+      return changeRowStatus(row.Item_id, "IZ", session).catch((error) => {
+        errors.push(
+          `Failed to change status for item ${row.Item_id}: ${error}`
+        );
+      });
+    });
 
-    // Change status of each selected row
-    for (const row of selectedRows) {
-      const itemId = row.Item_id;
-      try {
-        await changeRowStatus(itemId, "IZ", session);
-      } catch (error) {
-        console.error("Failed to change row status", error);
-      }
+    await Promise.all(deletePromises);
+
+    if (errors.length > 0) {
+      console.error("Some rows failed to update:", errors);
+      // Handle errors (e.g., show a notification to the user)
+    } else {
+      // Optimistically remove the rows from the UI
+      setTableData((currentData) =>
+        currentData.filter((item) => !rowsToDelete.includes(item))
+      );
     }
 
     setRowSelection({});
@@ -1069,7 +1077,7 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   const handleDuplicate = async () => {
     // Check if the user has "W" authorisation
-    const { project, batch, items } = await fetchRowData(
+    const { batch, items } = await fetchRowData(
       Number(job_id),
       batchNum,
       session
@@ -1103,12 +1111,38 @@ export const ItemsTable = React.memo(function ItemsTable({
     const rowIndex = cell && cell.row.index;
     const col = cell && cell.column.columnDef.id;
     if (rowIndex !== 0) {
-      const aboveCell = tableData[rowIndex - 1][col];
       setSelectedCell({ index: rowIndex, id: col });
-
-      setStoredValue(aboveCell);
-
       setSelectedColumn(col);
+    }
+  };
+
+  const handleCellValueChange = async (
+    rowIndex: number,
+    columnId: string,
+    newValue: any
+  ) => {
+    const currentCellId = tableData[rowIndex].Item_id;
+    setTableData((old) =>
+      old.map((row, index) => {
+        if (index === rowIndex) {
+          return {
+            ...old[rowIndex],
+            [columnId]: newValue,
+          };
+        }
+        return row;
+      })
+    );
+
+    const updated = await updateRow(
+      currentCellId,
+      { [columnId]: newValue },
+      session
+    );
+    if (updated) {
+      console.log("Cell value updated in the backend");
+    } else {
+      console.log("Failed to update cell value in the backend");
     }
   };
 
@@ -1116,7 +1150,7 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   const onRowClick = (row: Row<ProjectItems>) => {
     setSelectedRow(null); // Deselect the row
-    const actualRow = row.original;
+    const actualRow = row && row.original;
     const isAnyRowSelected = Object.values(rowSelection).some(
       (value) => value === true
     );
@@ -1125,15 +1159,20 @@ export const ItemsTable = React.memo(function ItemsTable({
     }
   };
 
-  const getRowStyles = (row: Row<ProjectItems>, index: number) => {
-    let rowStyles = {};
-    // Check if the row is selected by checkbox or by click
-    if (rowSelection[index] || row.original.Item_id === selectedRow?.Item_id) {
-      rowStyles = { backgroundColor: "#BDCCE5" }; // Color for selected row
-    } else {
-      rowStyles = {}; // Default styles for deselected row
+  const getRowStyles = (row: Row<ProjectItems>) => {
+    const selectedRows = getSelectedRows(rowSelection, tableData);
+
+    // Ensure that row.original exists and has the property Item_id
+    if (row?.original?.Item_id && selectedRow?.Item_id) {
+      if (row.original.Item_id === selectedRow.Item_id) {
+        return { backgroundColor: "#BDCCE5" };
+      }
     }
-    return rowStyles;
+    if (markedRow && markedRow.Item_id === row.original.Item_id) {
+      return { backgroundColor: "yellow" };
+    }
+
+    return {}; // Default style for non-selected rows
   };
 
   const clearAllFilters = () => {
@@ -1159,12 +1198,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     setOpeningMenu(!openingMenu);
   };
 
-  const handleKeyDown = (event) => {
-    if (event.ctrlKey && event.key === "d") {
-      event.preventDefault();
-    }
-  };
-
   //----------------------------------USE EFFECTS AND SOCKETS
   useEffect(() => {
     const columnFilters = table.getState().columnFilters;
@@ -1187,7 +1220,6 @@ export const ItemsTable = React.memo(function ItemsTable({
         setSelectedColumn(null);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
 
     document.addEventListener("click", handleOutsideClick);
     window.addEventListener("click", handleClick);
@@ -1219,7 +1251,7 @@ export const ItemsTable = React.memo(function ItemsTable({
       );
       // Empty both rowSelection and selectedRow
       setRowSelection([]);
-      setSelectedRow(null);
+      //setSelectedRow(null);
     });
 
     socket.on("itemDeleted", (deletedItem) => {
@@ -1251,12 +1283,113 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     return () => {
       socket.close();
-      window.removeEventListener("keydown", handleKeyDown);
 
       document.removeEventListener("click", handleOutsideClick);
       window.removeEventListener("click", handleClick);
     };
   }, [data]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (selectedCell) {
+        if (event.ctrlKey && event.key === "d" && selectedCell.index !== 0) {
+          event.preventDefault();
+          event.stopPropagation();
+          const cellAboveId = `${selectedCell.index - 1}-${selectedCell.id}`;
+          const cellBelowId = `${selectedCell.index + 1}-${selectedCell.id}`;
+          const aboveCell = cellRefs.current[cellAboveId];
+          const belowCell = cellRefs.current[cellBelowId];
+
+          if (
+            aboveCell &&
+            aboveCell.current &&
+            belowCell &&
+            belowCell.current
+          ) {
+            const newValue = aboveCell.current.value;
+            belowCell.current.value = newValue;
+            console.log("below cell", belowCell.current.value);
+            handleCellValueChange(
+              selectedCell.index,
+              selectedCell.id,
+              newValue
+            );
+            if (cellRefs.current[cellBelowId]) {
+              cellRefs.current[cellBelowId]?.current?.focus();
+              const nextRowIndex = selectedCell.index + 1;
+              console.log("next row index", nextRowIndex);
+              setSelectedRow(tableData[nextRowIndex]);
+              console.log("selected row", tableData[nextRowIndex]);
+              setSelectedCell({
+                index: nextRowIndex,
+                id: selectedCell.id,
+              });
+            }
+            // Check if the selected cell is in the last row
+          } else if (selectedCell.index === tableData.length - 1) {
+            const newValue = aboveCell.current.value;
+            handleCellValueChange(
+              selectedCell.index,
+              selectedCell.id,
+              newValue
+            );
+            console.log("This is the last row, no cell below");
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedCell]);
+
+  //------------------------------------MARK AND PASTE FUNCTIONS
+
+  const handleMark = () => {
+    if (markedRow) {
+      setMarkedRow(null);
+    } else if (selectedRow) {
+      setShowMarkModal(!showMarkModal);
+      setMarkedRow(selectedRow);
+      selectedRow && getRowStyles(selectedRow);
+    }
+  };
+
+  const handlePaste = async () => {
+    const marked = await fetchItemDetails(markedRow.Item_id, session);
+    const selectedRows = getSelectedRows(rowSelection, tableData);
+
+    // Check if all selected rows have a status_code that allows updating
+    const canUpdateAll = selectedRows.every((row) =>
+      ["IB", "ID", "IDR", "IXH"].includes(row.status_code)
+    );
+    console.log("can update all", !canUpdateAll);
+    if (!canUpdateAll) {
+      console.log("getting info from", marked);
+      console.log("mergin info to selected rows", selectedRows);
+      /*
+      const updatePromises = selectedRows.map((row) => {
+        return updateRow(row.Item_id, merge, session).catch((error) => {
+          errors.push(`Failed to update item ${row.Item_id}: ${error}`);
+        });
+      });
+      await Promise.all(updatePromises);
+      if (errors.length > 0) {
+        console.error("Some rows failed to update:", errors);
+        // Handle errors (e.g., show a notification to the user)
+      }
+
+      // Optionally, you can alert the user or handle this case differently
+      return;
+      */
+    } else {
+      console.error(
+        "Update can only be performed on items with status codes IB, ID, IDR, IXH"
+      );
+    }
+    setMarkedRow(null);
+  };
 
   return (
     <div ref={tableRef}>
@@ -1267,6 +1400,11 @@ export const ItemsTable = React.memo(function ItemsTable({
         button1Action={modalConfig.button1Action}
         button2Text={modalConfig.button2Text}
         button2Action={modalConfig.button2Action}
+      />
+      <MarkModal
+        isOpen={showMarkModal}
+        setModal={setShowMarkModal}
+        setMarked={setMarkedRow}
       />
 
       {clicked && (
@@ -1284,12 +1422,21 @@ export const ItemsTable = React.memo(function ItemsTable({
         <div className="absolute flex gap-2">
           <TopMenuButton description="Hide Columns" onClick={handleOpening} />
           <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
-          <DeleteButton description="Delete" onclick={handleDelete} />
-          <DuplicateButton description="Duplicate" onclick={handleDuplicate} />
+          <TopMenuButton description="Delete" onClick={handleDelete} />
+          <TopMenuButton description="Duplicate" onClick={handleDuplicate} />
           <CopyButton
             toggle={selectedColumn}
             description="Copy Down"
             onclick={() => setSelectedColumn(null)}
+          />
+          <TopMenuButton
+            description="Mark/Unmark"
+            onClick={() => handleMark()}
+          />
+          <TopMenuButton description="Paste" onClick={() => handlePaste()} />
+          <TopMenuButton
+            description="View Group"
+            onClick={() => console.log("clicking")}
           />
         </div>
         {openingMenu && (
@@ -1362,8 +1509,6 @@ export const ItemsTable = React.memo(function ItemsTable({
           </thead>
           <tbody ref={tbodyRef}>
             {table.getRowModel().rows.map((row, index) => {
-              const rowStyles = getRowStyles(row, index);
-
               return (
                 <tr
                   tabIndex={0}
@@ -1391,7 +1536,7 @@ export const ItemsTable = React.memo(function ItemsTable({
                                 )
                             : () => handleCopy(cell)
                         }
-                        style={{ ...rowStyles }}
+                        style={getRowStyles(row)}
                         key={cell.id}
                         className={`py-2 ${index === 1 ? "px-0 " : "px-2"}`}
                         {...cellContextProps}

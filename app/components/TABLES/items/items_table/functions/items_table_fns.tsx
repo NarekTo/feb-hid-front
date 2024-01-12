@@ -94,7 +94,9 @@ export const customCellRenderer = ({
   const [isEditable, setIsEditable] = useState(false);
   const selectedCell = useClickedCellStore((state) => state.clickedCell);
   const setSelectedCell = useClickedCellStore((state) => state.setClickedCell);
-  const { storedValue } = useStoredValueStore();
+  const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
+  const actualTable = table.getCoreRowModel();
+
   const Item_id = original.Item_id;
 
   const onBlur = async () => {
@@ -111,84 +113,10 @@ export const customCellRenderer = ({
     setIsEditable(true);
   };
 
-  const handleCellValueChange = async (
-    rowIndex: number,
-    columnId: string,
-    newValue: any
-  ) => {
-    const actualTable = table.getCoreRowModel();
-    const currentCellId = actualTable.rowsById[rowIndex].original.Item_id;
-    const currentCellValue = actualTable.rowsById[rowIndex].original[columnId];
-    setTableData((old) =>
-      old.map((row, index) => {
-        if (index === rowIndex) {
-          return {
-            ...old[rowIndex],
-            [columnId]: newValue,
-          };
-        }
-        return row;
-      })
-    );
-    console.log("current cell id", currentCellId);
-    console.log("current cell value", currentCellValue);
-    const updated = await updateRow(
-      currentCellId,
-      { [columnId]: newValue },
-      session
-    );
-    if (updated) {
-      console.log("Cell value updated in the backend");
-    } else {
-      console.log("Failed to update cell value in the backend");
-    }
-
-    console.log("Row Index: ", rowIndex);
-    console.log("Column ID: ", columnId);
-    console.log("New Value: ", newValue);
-  };
-
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (selectedCell) {
-        if (event.ctrlKey && event.key === "d" && selectedCell.index !== 0) {
-          event.preventDefault();
-          event.stopPropagation();
-
-          // Get the celLS ID
-          const cellAboveId = `${selectedCell.index - 1}-${selectedCell.id}`;
-          const cellCurrentId = `${selectedCell.index}-${selectedCell.id}`;
-          const cellBelowId = `${selectedCell.index + 1}-${selectedCell.id}`;
-          //Get the cell refs
-          const aboveCell = cellRefs[cellAboveId];
-          const currentCell = cellRefs[cellCurrentId];
-          const belowCell = cellRefs[cellBelowId];
-
-          if (
-            aboveCell &&
-            aboveCell.current &&
-            belowCell &&
-            belowCell.current
-          ) {
-            const newValue = aboveCell.current.value;
-            belowCell.current.value = newValue;
-
-            // Update the state
-            handleCellValueChange(
-              selectedCell.index,
-              selectedCell.id,
-              newValue
-            );
-          }
-
-          if (cellRefs[cellBelowId]) {
-            cellRefs[cellBelowId]?.current?.focus();
-            setSelectedCell({
-              index: selectedCell.index + 1,
-              id: selectedCell.id,
-            });
-          }
-        } else if (event.key === "ArrowUp") {
+        if (event.key === "ArrowUp") {
           event.preventDefault();
           if (selectedCell.index > 0) {
             const cellAboveId = `${selectedCell.index - 1}-${selectedCell.id}`;
@@ -338,7 +266,20 @@ export const lockCellRenderer = ({
 };
 
 //-------------------------------------------------------------Column Functions-------------------------------------------------------------
-
+export const getSelectedRows = (
+  rowSelection: { [key: string]: boolean },
+  tableData: any[]
+) => {
+  let selectedRow;
+  if (Object.keys(rowSelection).length > 0) {
+    return Object.entries(rowSelection)
+      .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
+      .map(([key]) => tableData[key]);
+  } else if (selectedRow) {
+    return [selectedRow];
+  }
+  return [];
+};
 // `columnList` is a function component that renders a list of columns.
 export const columnList = (currTable: {
   getAllLeafColumns: () => Column[];
@@ -514,31 +455,115 @@ export const deleteRow = async (itemId: string, session: Session | null) => {
 
 /*
 
+
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.ctrlKey && event.key === "d") {
-        event.stopPropagation();
-        event.preventDefault();
-
-        if (clickedCell && clickedCell.ref === cellRef.current) {
-          console.log("ctrld works");
-          // console.log("ctrld cell ref", cellRef.current);
-          handleControlD();
-        }
-      } else if (event.key === "ArrowUp") {
-        event.preventDefault();
-        if (index > 0) {
-          const cellAboveId = `${index - 1}-${id}`;
-          if (cellRefs[cellAboveId]) {
-            cellRefs[cellAboveId]?.current?.focus();
+      if (selectedCell) {
+        if (event.ctrlKey && event.key === "d" && selectedCell.index !== 0) {
+          event.preventDefault();
+          event.stopPropagation();
+          // Get the celLS ID
+          const cellAboveId = `${selectedCell.index - 1}-${selectedCell.id}`;
+          const cellBelowId = `${selectedCell.index + 1}-${selectedCell.id}`;
+          //Get the cell refs
+          const aboveCell = cellRefs[cellAboveId];
+          const belowCell = cellRefs[cellBelowId];
+          console.log("above cell", aboveCell);
+          console.log("below cell", belowCell);
+          if (
+            aboveCell &&
+            aboveCell.current &&
+            belowCell &&
+            belowCell.current
+          ) {
+            const newValue = aboveCell.current.value;
+            belowCell.current.value = newValue;
+            console.log("below cell", belowCell.current.value);
+            handleCellValueChange(
+              selectedCell.index,
+              selectedCell.id,
+              newValue
+            );
+            if (cellRefs[cellBelowId]) {
+              cellRefs[cellBelowId]?.current?.focus();
+              const nextRowIndex = selectedCell.index + 1;
+              console.log("next row index", nextRowIndex);
+              setSelectedRow(actualTable.rows[nextRowIndex].original);
+              console.log(
+                "selected row",
+                actualTable.rows[nextRowIndex].original
+              );
+              setSelectedCell({
+                index: nextRowIndex,
+                id: selectedCell.id,
+              });
+            }
+            // Check if the selected cell is in the last row
+          } else if (selectedCell.index === actualTable.rows.length - 1) {
+            console.log("This is the last row, no cell below");
           }
-        }
-      } else if (event.key === "ArrowDown") {
-        ("concole log arrow down");
-        event.preventDefault();
-        const cellBelowId = `${index + 1}-${id}`;
-        if (cellRefs[cellBelowId]) {
-          cellRefs[cellBelowId]?.current?.focus();
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          if (selectedCell.index > 0) {
+            const cellAboveId = `${selectedCell.index - 1}-${selectedCell.id}`;
+            if (cellRefs[cellAboveId]) {
+              cellRefs[cellAboveId]?.current?.focus();
+              setSelectedCell({
+                index: selectedCell.index - 1,
+                id: selectedCell.id,
+              });
+            }
+          }
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          const cellBelowId = `${selectedCell.index + 1}-${selectedCell.id}`;
+          if (cellRefs[cellBelowId]) {
+            cellRefs[cellBelowId]?.current?.focus();
+            setSelectedCell({
+              index: selectedCell.index + 1,
+              id: selectedCell.id,
+            });
+          }
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          const columns = table
+            .getAllLeafColumns()
+            .filter((column) => column.getIsVisible());
+          const columnIndex = columns.findIndex(
+            (column) => column.id === selectedCell.id
+          );
+          if (columnIndex < columns.length - 1) {
+            const cellRightId = `${selectedCell.index}-${
+              columns[columnIndex + 1].id
+            }`;
+            if (cellRefs[cellRightId]) {
+              cellRefs[cellRightId]?.current?.focus();
+              setSelectedCell({
+                index: selectedCell.index,
+                id: columns[columnIndex + 1].id,
+              });
+            }
+          }
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          const columns = table
+            .getAllLeafColumns()
+            .filter((column) => column.getIsVisible());
+          const columnIndex = columns.findIndex(
+            (column) => column.id === selectedCell.id
+          );
+          if (columnIndex > 0) {
+            const cellLeftId = `${selectedCell.index}-${
+              columns[columnIndex - 1].id
+            }`;
+            if (cellRefs[cellLeftId]) {
+              cellRefs[cellLeftId]?.current?.focus();
+              setSelectedCell({
+                index: selectedCell.index,
+                id: columns[columnIndex - 1].id,
+              });
+            }
+          }
         }
       }
     };
@@ -547,48 +572,5 @@ export const deleteRow = async (itemId: string, session: Session | null) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [table, cellRef, clickedCell, index]);
-
-  const onCellClick = (rowIndex, columnId) => {
-    "calling on cell click";
-    const cellAboveRowIndex = index - 1;
-    const cellAboveCellId = `${cellAboveRowIndex}-${id}`;
-    const cellBelowRowIndex = index + 1;
-    const cellBelowCellId = `${cellBelowRowIndex}-${id}`;
-
-    setClickedCell({ rowIndex, columnId, ref: cellRef.current });
-    console.log("clicked cell", {
-      rowIndex,
-      columnId,
-      ref: cellRef.current,
-    });
-    // Set cell above if it exists
-    if (cellAboveRowIndex >= 0 && cellRefs[cellAboveCellId]) {
-      setCellAbove({
-        rowIndex: cellAboveRowIndex,
-        columnId: id,
-        ref: cellRefs[cellAboveCellId].current,
-      });
-      console.log("cell above", {
-        rowIndex: cellAboveRowIndex,
-        columnId: id,
-        ref: cellRefs[cellAboveCellId].current,
-      });
-    }
-
-    // Set cell below if it exists
-    if (cellRefs[cellBelowCellId]) {
-      setCellBelow({
-        rowIndex: cellBelowRowIndex,
-        columnId: id,
-        ref: cellRefs[cellBelowCellId].current,
-      });
-      console.log("cell below", {
-        rowIndex: cellBelowRowIndex,
-        columnId: id,
-        ref: cellRefs[cellBelowCellId].current,
-      });
-    }
-  };
-
+  }, [selectedCell]);
 */

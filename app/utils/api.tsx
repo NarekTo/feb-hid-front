@@ -120,3 +120,33 @@ export const updateRow = async (
 };
 
 //----------------------------------- PROJECTS FETCHING
+
+export const fetchItemDetails = async (
+  itemId: string,
+  session: Session | null
+) => {
+  if (!session) {
+    console.error("Session not available");
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3000/items/info/${itemId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+
+    if (response.ok) {
+      const itemDetails = await response.json();
+      console.log("Item details fetched successfully");
+      return itemDetails;
+    } else {
+      console.error("Failed to fetch item details");
+    }
+  } catch (error) {
+    console.error("Error fetching item details:", error);
+  }
+};

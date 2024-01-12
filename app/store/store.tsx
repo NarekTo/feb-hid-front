@@ -74,3 +74,38 @@ export const useStoredValueStore = create<StoredValueState>((set) => ({
   storedValue: null,
   setStoredValue: (value) => set({ storedValue: value }),
 }));
+
+interface CheckboxOptions {
+  itemDimensions: boolean;
+  itemCompositions: boolean;
+  itemSpecifications: boolean;
+  itemImages: boolean;
+  itemLocations: boolean;
+}
+
+type StoreMarkState = {
+  action: string | null;
+  checkboxOptions: CheckboxOptions;
+  setAction: (action: string | null) => void;
+  setCheckboxOptions: (
+    options:
+      | Partial<CheckboxOptions>
+      | ((prevState: CheckboxOptions) => Partial<CheckboxOptions>)
+  ) => void;
+};
+
+export const useStoreMark = create<StoreMarkState>((set) => ({
+  action: null,
+  checkboxOptions: {
+    itemDimensions: false,
+    itemCompositions: false,
+    itemSpecifications: false,
+    itemImages: false,
+    itemLocations: false,
+  },
+  setAction: (action) => set({ action: action }),
+  setCheckboxOptions: (options) =>
+    set((state) => ({
+      checkboxOptions: { ...state.checkboxOptions, ...options },
+    })),
+}));
