@@ -150,3 +150,38 @@ export const fetchItemDetails = async (
     console.error("Error fetching item details:", error);
   }
 };
+
+//UPDATE PROJECT TABLES COMPOSITIONS, DIMENSIONS, SPECIFICATIONS, IMAGES, LOCATIONS
+export const updateItemsDetails = async (
+  type: string,
+  itemId: string,
+  value: Record<string, unknown>,
+  action: string,
+  session: Session
+): Promise<boolean> => {
+  try {
+    console.log("id", itemId);
+    const response = await fetch(
+      `http://localhost:3000/items/${type}/${itemId.trim()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+        body: JSON.stringify({ ...value, action }),
+      }
+    );
+
+    if (response.ok) {
+      console.log("Item updated successfully");
+      return true;
+    } else {
+      console.error("Failed to update item");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error updating data:", error);
+    return false;
+  }
+};

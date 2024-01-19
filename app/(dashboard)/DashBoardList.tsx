@@ -13,6 +13,7 @@ const DashboardList = ({ userProjects }) => {
   const allProjects = userProjects.userProjects; // Fetch or define your projects here
   const [selectedProject, setSelectedProject] = useState(allProjects[0]);
   const [tableItems, setTableItems] = useState([]);
+
   const handleBatchClick = (project) => {
     console.log(project);
   };
@@ -72,10 +73,7 @@ const DashboardList = ({ userProjects }) => {
 
       {tableItems &&
         tableItems.map((project, index) => (
-          <div
-            className="h-full overflow-auto  no-scrollbar"
-            key={project.job_id}
-          >
+          <div className="h-full overflow-auto no-scrollbar" key={index}>
             <h1>TABLE {project.job_id}</h1>
             <h3>{project.job_id}</h3>
             <MainTable

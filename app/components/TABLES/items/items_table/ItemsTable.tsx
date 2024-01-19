@@ -49,6 +49,7 @@ import {
   changeRowStatus,
   fetchItemDetails,
   fetchRowData,
+  updateItemsDetails,
   updateRow,
 } from "../../../../utils/api";
 import { CopyButton } from "./components/topMenu/CopyButton";
@@ -58,6 +59,7 @@ import {
   useStoreMark,
 } from "../../../../store/store";
 import MarkModal from "./components/ModalMark";
+import { ToggleColorButton } from "./components/topMenu/ToggleColorButton";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -107,6 +109,8 @@ export const ItemsTable = React.memo(function ItemsTable({
   });
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [markedRow, setMarkedRow] = useState(null);
+  const isAnyRowSelected = Object.values(rowSelection).some((value) => value);
+
   const tableRef = useRef(null);
   const virtualRef = useRef(null);
   const job_id = searchParams.get("job_id") as string;
@@ -1364,11 +1368,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     );
 
     if (!canUpdateAll) {
-      console.log("action", action);
-      console.log("options", checkboxOptions);
-      console.log("getting info from", marked);
-      console.log("mergin info to selected rows", selectedRows);
-
       handleMerge(marked, checkboxOptions, selectedRows);
       /*
       if (marked) {
@@ -1395,28 +1394,63 @@ export const ItemsTable = React.memo(function ItemsTable({
     }
     setMarkedRow(null);
   };
-  const handleMerge = async (marked, options, selectedRows) => {
-    if (action === "merge") {
-      // Filter out the keys from options which are true
-      const keysToUpdate = Object.keys(options).filter((key) => options[key]);
 
-      // Iterate over each selected row
-      selectedRows.forEach((row) => {
-        keysToUpdate.forEach((key) => {
-          // Check if the marked object has the data for the current key
-          if (marked[key]) {
-            // Update or copy the data from marked to the selected row
-            row[key] = marked[key];
-          }
-        });
-      });
-      console.log("selected rows", selectedRows);
-      // Return the updated selected rows
-      return selectedRows;
+  const handleMerge = async (marked, options, selectedRows) => {
+    const keysToUpdate = Object.keys(options).filter((key) => options[key]);
+    const updatedItems = [];
+    let errorOccurred = false;
+
+    for (const row of selectedRows) {
+      const item_id = row.Item_id.trim();
+      for (const key of keysToUpdate) {
+        let value = marked[key];
+        if (Array.isArray(value)) {
+          value = value.map((item) => ({
+            ...item,
+            item_id: item_id, // Use the item_id of the row you want to update
+          }));
+        }
+        const updated = await updateItemsDetails(
+          key,
+          item_id,
+          value,
+          action,
+          session
+        );
+        if (updated) {
+          updatedItems.push(item_id);
+          console.log(`Updated ${key} for item ${item_id}`);
+        } else {
+          errorOccurred = true;
+          console.error(`Failed to update ${key} for item ${item_id}`);
+        }
+      }
     }
+    setSelectedRow(null);
+    setRowSelection({});
+    setAction("");
+
+    if (errorOccurred) {
+      setModalConfig({
+        ...modalConfig,
+        text: "There was a problem, please try again.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
+      });
+    } else {
+      setModalConfig({
+        ...modalConfig,
+        text: `Items ${updatedItems.join(", ")} were updated.`,
+        button1Text: "OK",
+        button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
+      });
+    }
+
+    setShowModal(true);
+
+    return selectedRows;
   };
 
-  // Call handleMerge where appropriate, for example, after a button click
   return (
     <div ref={tableRef}>
       <Modal
@@ -1450,7 +1484,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
           <TopMenuButton description="Delete" onClick={handleDelete} />
           <TopMenuButton description="Duplicate" onClick={handleDuplicate} />
-          <CopyButton
+          <ToggleColorButton
             toggle={selectedColumn}
             description="Copy Down"
             onclick={() => setSelectedColumn(null)}
@@ -1459,7 +1493,11 @@ export const ItemsTable = React.memo(function ItemsTable({
             description="Mark/Unmark"
             onClick={() => handleMark()}
           />
-          <TopMenuButton description="Paste" onClick={() => handlePaste()} />
+          <ToggleColorButton
+            description="Paste"
+            onclick={() => handlePaste()}
+            toggle={isAnyRowSelected && action !== ""}
+          />
           <TopMenuButton
             description="View Group"
             onClick={() => console.log("clicking")}
