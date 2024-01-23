@@ -1,29 +1,27 @@
 import { getToken } from "next-auth/jwt";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const secret = process.env.SECRET;
 
-export async function middleware(req: NextRequest) {
+export const middleware = async (req: NextRequest) => {
   const token = await getToken({ req, secret });
-  const url = new URL(`/`, req.url);
+  const url = new URL("/", req.url);
+  const loginUrl = new URL("/login", req.url);
 
-  // console.log("token", token);
-  // If there's no token or the token is invalid, redirect to the login page
-
-  if (!token) {
-    return NextResponse.redirect("/login");
-  }
-  if (token) {
-    const currentDate = new Date();
-    const expirationDate = new Date((token.exp as number) * 1000);
-    // console.log(expirationDate);
-    if (currentDate >= expirationDate) {
-      return NextResponse.redirect("/login");
-    }
-  }
-  if (req.nextUrl.pathname === "/login" && token) {
+  // If the user is authenticated and trying to access the login page, redirect them to the home page
+  if (token && req.nextUrl.pathname === "/login") {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
-}
+  if (token) {
+    console.log("login url", loginUrl.toString());
+    const currentDate = new Date();
+    const expirationDate = new Date((token.exp as number) * 1000);
+    console.log(expirationDate);
+    if (currentDate >= expirationDate) {
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+  return NextResponse.next(); // Pass control to the next Middleware or route handler
+};
