@@ -60,6 +60,7 @@ import {
 } from "../../../../store/store";
 import MarkModal from "./components/ModalMark";
 import { ToggleColorButton } from "./components/topMenu/ToggleColorButton";
+import * as XLSX from "xlsx";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -1418,7 +1419,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           session
         );
         if (updated) {
-          updatedItems.push(item_id);
+          updatedItems.push(`${item_id} (${key})`);
           console.log(`Updated ${key} for item ${item_id}`);
         } else {
           errorOccurred = true;
@@ -1450,6 +1451,13 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     return selectedRows;
   };
+
+  function exportToExcel(tableData) {
+    const ws = XLSX.utils.json_to_sheet(tableData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, "table_data.xlsx");
+  }
 
   return (
     <div ref={tableRef}>
@@ -1501,6 +1509,11 @@ export const ItemsTable = React.memo(function ItemsTable({
           <TopMenuButton
             description="View Group"
             onClick={() => console.log("clicking")}
+          />
+
+          <TopMenuButton
+            description="Export Excel"
+            onClick={() => exportToExcel(tableData)}
           />
         </div>
         {openingMenu && (

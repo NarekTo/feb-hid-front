@@ -154,6 +154,7 @@ export interface ProjectProjects {
   start_date: Date;
   end_date: Date;
   status_code?: string;
+  image_url?: string;
 }
 
 export interface PasswordReset {

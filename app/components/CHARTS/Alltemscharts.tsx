@@ -37,7 +37,6 @@ const AllItemsChart: React.FC<AllItemsChartProps> = ({
             },
           }
         );
-        console.log("res", res);
         if (res.status === 401) {
           console.log("checking for 401");
           // Redirect to "Change Password" page
@@ -56,7 +55,6 @@ const AllItemsChart: React.FC<AllItemsChartProps> = ({
 
     fetchItems();
   }, [selectedProject]);
-  console.log("selected chart", chartItems);
 
   //create an array of objects with the status and the quantity for the chart
   const statusCounts = chartItems.reduce((acc, item) => {
@@ -72,8 +70,6 @@ const AllItemsChart: React.FC<AllItemsChartProps> = ({
     return acc;
   }, {});
   const statusArray = Object.values(statusCounts);
-
-  console.log(statusArray);
   return (
     <div className="bg-slate-100 rounded-md w-full  grow flex flex-col ">
       <div className="flex justify-between">
