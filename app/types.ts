@@ -138,6 +138,7 @@ export interface ProjectItems {
   supplier_notes?: string;
   created_date?: Date;
   modified_date?: Date;
+  image_url: string; // customised field not from db
 }
 
 export interface ProjectProjects {

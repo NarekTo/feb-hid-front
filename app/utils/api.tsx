@@ -1,4 +1,4 @@
-import { ProjectItemsWithSelect, Session } from "../types";
+import { ProjectItemsWithSelect, Session, ProjectItemImages } from "../types";
 
 //----------------------------------- ITEMSTABLE FETCHING
 
@@ -26,6 +26,34 @@ export const addRow = async (
     }
   } catch (error) {
     console.error("Error adding row:", error);
+  }
+};
+
+// FETCH IMAGE
+export const fetchItemImage = async (itemId: ProjectItemImages, session: Session | null) => {
+  if (!session) {
+    console.error("Session not available");
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3000/images/${itemId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+
+    if (response.ok) {
+      const imageData = await response.json();
+      console.log("Image data fetched successfully");
+      return imageData;
+    } else {
+      console.error("Failed to fetch image data");
+    }
+  } catch (error) {
+    console.error("Error fetching image data:", error);
   }
 };
 

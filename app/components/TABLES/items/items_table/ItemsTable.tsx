@@ -11,12 +11,13 @@ import {
   ColumnMeta,
   TableOptions,
   Table,
-  SortingState,
+  SortingState, 
   ColumnFiltersState,
   Row,
 } from "@tanstack/react-table";
 import {
   customCellRenderer,
+  imageCellRenderer,
   down,
   fuzzySort,
   getHighestItemId,
@@ -31,7 +32,7 @@ import {
   useSkipper,
 } from "./functions/items_table_fns";
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { ProjectItems, Session } from "../../../../types";
+import { ProjectItems, Session, ProjectItemImages } from "../../../../types";
 import { ContextMenu } from "./components/topMenu/ContextMenu";
 import { fuzzyFilter } from "./components/Filter";
 import { Filter } from "./components/Filter";
@@ -175,6 +176,14 @@ export const ItemsTable = React.memo(function ItemsTable({
           }),
         filterFn: "fuzzy",
         sortingFn: fuzzySort,
+      },
+      {
+        id: "item_image",
+        header: "Item Image",
+        accessorKey: "item_image",
+        cell: (cellInfo) => imageCellRenderer({ 
+          getValue: () => cellInfo.row.original.image_url,
+        }),
       },
       {
         id: "job_id",

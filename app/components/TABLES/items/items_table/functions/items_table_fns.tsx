@@ -3,6 +3,7 @@ import {
   ProjectItems,
   ProjectItemsWithSelect,
   Session,
+  ProjectItemImages,
 } from "../../../../../types";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
 import { SortingFn, sortingFns } from "@tanstack/react-table";
@@ -14,6 +15,7 @@ import {
   useOptionStore,
   useStoredValueStore,
 } from "../../../../../store/store";
+import Image from "next/image";
 
 // --
 interface LockCellRendererProps {
@@ -40,6 +42,10 @@ interface CustomCellRendererProps {
   setTableData: any;
   cellRef;
   cellRefs; // replace 'any' with the actual type of 'table'
+}
+
+interface imageCellRendererProps {
+  getValue: () => string; // replace 'any' with the actual type// replace 'any' with the actual type of 'table'
 }
 
 //-----------------------------------------------calculations for adding and sorting rows-------------------------------------------------------------
@@ -211,6 +217,16 @@ export const customCellRenderer = ({
       onFocus={onFoc}
       readOnly={!isEditable}
     />
+  );
+};
+
+export const imageCellRenderer = ({getValue}: imageCellRendererProps) => {
+  const value = getValue();
+  console.log("value", value);
+  return (
+    <img src={value} width={100} height={100} alt="Item Image"/>
+   
+    //  <Image src={value} width={100} height={100} alt="Item Image" />
   );
 };
 
@@ -428,6 +444,7 @@ export const newRow: ProjectItemsWithSelect = {
   supplier_notes: "",
   created_date: null,
   modified_date: null,
+  image_url: ""
 };
 
 // old real delete row function
