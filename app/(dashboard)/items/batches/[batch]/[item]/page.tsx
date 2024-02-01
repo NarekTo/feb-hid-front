@@ -31,11 +31,11 @@ const getData = async (params: SingleItemParam["params"]) => {
 
 const Item: React.FC<SingleItemParam> = async ({ params }: SingleItemParam) => {
   const singleItem = await getData(params);
-  console.log("params", params.item);
+  console.log("singleItem", singleItem);
 
   return (
     <div>
-      <SingleItem item={singleItem} />
+      <SingleItem itemDetail={singleItem} />
     </div>
   );
 };

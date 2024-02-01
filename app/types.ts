@@ -45,10 +45,10 @@ export interface MainTableCrudProps {
   batchNum: string;
 }
 export interface itemInfoType {
-  projectItems: ProjectItems;
-  projectSpecifications: ProjectItemSpecs;
-  projectCompositions: ProjectItemCompositions;
-  projectDimensions: ProjectItemDimensions;
+  item: ProjectItems;
+  itemSpecifications: ProjectItemSpecs[];
+  itemCompositions: ProjectItemCompositions[];
+  itemDimensions: ProjectItemDimensions[];
 }
 
 //------------------------------------SQL TABLES TYPES
