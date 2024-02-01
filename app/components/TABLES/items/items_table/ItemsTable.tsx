@@ -900,7 +900,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     });
   });
 
-  //  console.log("cell refs", cellRefs.current);
   //------------------------------------TABLE
   const table = useReactTable({
     data: tableData,
@@ -1401,9 +1400,6 @@ export const ItemsTable = React.memo(function ItemsTable({
       }
     });
     setIsFiltering(Object.keys(table.getState().columnFilters).length > 0);
-    console.log("working");
-
-    console.log("GROUP ACTIVE", groupViewActive);
   }, [table.getState().columnFilters]);
 
   useEffect(() => {
@@ -1564,7 +1560,7 @@ export const ItemsTable = React.memo(function ItemsTable({
         />
       )}
       <div
-        style={{ height: openingMenu ? "80px" : "40px" }}
+        style={{ height: openingMenu ? "80px" : "30px" }}
         className="flex items-start duration-500 ease-in-out mb-2"
       >
         <div className="absolute flex gap-2">
@@ -1595,7 +1591,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           />
         </div>
         {openingMenu && (
-          <div className="flex w-full p-2 text-xs shadow-lg mt-12 rounded-md bg-slate-100">
+          <div className="flex w-full p-2 text-xs shadow-lg mt-8 rounded-md bg-slate-100">
             {table.getAllLeafColumns().map((column) => {
               return <HideCheckBox column={column} key={column.id} />;
             })}

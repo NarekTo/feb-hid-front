@@ -27,4 +27,3 @@ export const ViewGroupButton: FC<ViewGroupButtonProps> = ({
     </button>
   );
 };
-//          : "bg-white border-2 border-dark-blue text-dark-blue"
