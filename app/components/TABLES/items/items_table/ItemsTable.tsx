@@ -1018,6 +1018,18 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleDelete = () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
     // Get the selected rows
     const selectedRows = getSelectedRows(rowSelection, tableData);
     if (selectedRows.length === 0) {
@@ -1090,6 +1102,18 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleDuplicate = async () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
     // Check if the user has "W" authorisation
     const { batch, items } = await fetchRowData(
       Number(job_id),
@@ -1213,6 +1237,18 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleMark = () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
     if (markedRow) {
       setMarkedRow(null);
     } else if (selectedRow) {
@@ -1323,6 +1359,18 @@ export const ItemsTable = React.memo(function ItemsTable({
     XLSX.writeFile(wb, `${project}-Batch${batchNum}-Items.xlsx`);
   };
   const viewGroup = () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
     setGroupViewActive((prevGroupViewActive) => {
       const newGroupViewActive = !prevGroupViewActive;
       if (!newGroupViewActive && selectedRow) {
