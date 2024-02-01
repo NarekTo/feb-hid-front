@@ -15,10 +15,8 @@ export const middleware = async (req: NextRequest) => {
   }
 
   if (token) {
-    console.log("login url", loginUrl.toString());
     const currentDate = new Date();
     const expirationDate = new Date((token.exp as number) * 1000);
-    console.log(expirationDate);
     if (currentDate >= expirationDate) {
       return NextResponse.redirect(loginUrl);
     }

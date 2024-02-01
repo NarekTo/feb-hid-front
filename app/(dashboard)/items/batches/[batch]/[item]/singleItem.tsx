@@ -4,109 +4,151 @@ import { useParams, useSearchParams } from "next/navigation";
 import { FC, useEffect, useState } from "react";
 import TitleHeader from "../../../../../components/UI_SECTIONS/page/TitleHeader";
 import { itemInfoType } from "../../../../../types";
+import ItemPanelSpecsTable from "../../../../../components/TABLES/items/single_item/ItemPanelSpecsTable";
 
 export interface SingleItemProps {
-  item: itemInfoType;
+  itemDetail: itemInfoType;
 }
-const SingleItem: FC<SingleItemProps> = ({ item }: SingleItemProps) => {
+const SingleItem: FC<SingleItemProps> = ({ itemDetail }: SingleItemProps) => {
   const searchParams = useSearchParams();
   const name = searchParams.get("project_name");
   const params = useParams();
-  const [itemInfo, setItemInfo] = useState<itemInfoType>(item);
-  const {
-    projectItems,
-    projectSpecifications,
-    projectCompositions,
-    projectDimensions,
-  } = itemInfo;
+  const [itemInfo, setItemInfo] = useState(itemDetail);
+  const { item, itemSpecifications, itemCompositions, itemDimensions } =
+    itemInfo;
 
   useEffect(() => {
-    setItemInfo(item);
+    setItemInfo(itemDetail);
   }, []);
 
+  const getReadableSpecCode = (code) => {
+    switch (code) {
+      case "AH":
+        return "HT - Height";
+      case "DP":
+        return "DP - Depth";
+      // Add other cases as needed
+      default:
+        return code;
+    }
+  };
+  const renderDimensionRow = (dimension, index) => (
+    <tr key={index}>
+      <td className="px-4 py-2 text-left">
+        {getReadableSpecCode(dimension.spec_code)}
+      </td>
+      <td className="px-4 py-2 text-left">{dimension.uom_code}</td>
+      <td className="px-4 py-2 text-left">{dimension.value}</td>
+    </tr>
+  );
+
+  const renderCompositionRow = (composition, index) => (
+    <tr key={index}>
+      <td className="px-4 py-2 text-left">{composition.material_code}</td>
+      <td className="px-4 py-2 text-left">{composition.percentage}%</td>
+    </tr>
+  );
+
+  const renderSpecificationRow = (specification, index) => (
+    <tr key={index}>
+      <td className="px-4 py-2 text-left">{specification.sequence}</td>
+      <td className="px-4 py-2 text-left">{specification.finish_code}</td>
+      <td className="px-4 py-2 text-left">{specification.notes}</td>
+    </tr>
+  );
+
   return (
-    <div className="w-full px-2">
+    <div className="w-full px-2 h-screen flex flex-col">
       <TitleHeader
         firstLabel="Project"
         firstValue={name}
         secondLabel="Batch n."
         secondValue={params.batch}
         thirdLabel="Item"
-        thirdValue={projectItems.Item_id}
+        thirdValue={item.Item_id}
       />
 
-      <div className=" rounded-md flex-col h-full">
-        <div className="flex items-center justify-between w-full bg-slate-100 rounded-md p-2 mb-4 ">
-          <div className="grid grid-cols-3 gap-2  w-2/3 h-full">
-            {itemInfo && projectItems
-              ? Object.entries(itemInfo.projectItems).map(([key, value]) => (
-                  <div key={key} className="flex px-4">
-                    <p className="font-thin">{key}:</p>
-                    <p className="font-medium pl-2">{value}</p>
-                  </div>
-                ))
-              : "No info"}
-          </div>
-          <div className="bg-yellow-200 w-1/3 h-full ">
-            <div className=" relative h-full">
-              <p>No image</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center   h-2/3 p-2">
-          <div className="bg-slate-100 h-full w-1/3 p-2 text-center rounded-md mr-2">
-            <h3 className="bg-primary-menu text-white py-1 rounded-md">
-              Dimensions
-            </h3>
-            <div className="pt-4">
-              {itemInfo && projectDimensions ? (
-                Object.entries(itemInfo.projectDimensions).map(
-                  ([key, value]) => (
+      <div className=" flex rounded-md flex-col h-full flex-grow">
+        <div className="flex items-center justify-between w-full bg-slate-100 rounded-md p-2 mb-4 h-full">
+          <div className="grid grid-cols-3 gap-2 w-2/3 h-full ">
+            {itemInfo && itemInfo.item
+              ? Object.entries(itemInfo.item)
+                  .filter(([key]) => key !== "image_url") // Exclude the image_url key
+                  .map(([key, value]) => (
                     <div key={key} className="flex px-4">
                       <p className="font-thin">{key}:</p>
                       <p className="font-medium pl-2">{value}</p>
                     </div>
-                  )
-                )
+                  ))
+              : "No info"}
+          </div>
+          <div className=" w-1/3 flex justify-center">
+            <div className="flex h-full items-center justify-center">
+              {item.image_url ? (
+                <img src={item.image_url} alt="Item Image" />
+              ) : (
+                <p className="h-full">Add Images</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start justify-center  flex-grow">
+          <div className="bg-slate-100 h-full flex-grow p-2 text-center rounded-md mr-2 ">
+            <h3 className="bg-slate-200 text-darkblue p-1 rounded-md font-semibold text-lg ">
+              Dimensions
+            </h3>
+            <div className="pt-4">
+              {itemInfo && itemDimensions ? (
+                <ItemPanelSpecsTable
+                  headers={["Dimensions", "UoM", "Value"]}
+                  data={
+                    itemInfo && itemInfo.itemDimensions
+                      ? itemInfo.itemDimensions
+                      : []
+                  }
+                  renderRow={renderDimensionRow}
+                />
               ) : (
                 <p>No dimensions</p>
               )}
             </div>
           </div>
-          <div className="bg-slate-100 h-full w-1/3 p-2 text-center rounded-md mr-2">
-            <h3 className="bg-primary-menu text-white py-1 rounded-md">
+          <div className="bg-slate-100 h-full flex-grow p-2 text-center rounded-md mr-2">
+            <h3 className="bg-slate-200 text-darkblue p-1 rounded-md font-semibold text-lg ">
               Compositions
             </h3>
             <div className="pt-4">
-              {itemInfo && projectCompositions ? (
-                Object.entries(itemInfo.projectCompositions).map(
-                  ([key, value]) => (
-                    <div key={key} className="flex px-4">
-                      <p className="font-thin">{key}:</p>
-                      <p className="font-medium pl-2">{value}</p>
-                    </div>
-                  )
-                )
+              {itemInfo && itemCompositions ? (
+                <ItemPanelSpecsTable
+                  headers={["Composition", "Value %"]}
+                  data={
+                    itemInfo && itemInfo.itemCompositions
+                      ? itemInfo.itemCompositions
+                      : []
+                  }
+                  renderRow={renderCompositionRow}
+                />
               ) : (
                 <p>No compositions</p>
               )}
             </div>
           </div>
-          <div className="bg-slate-100 h-full w-1/3 p-2 text-center rounded-md">
-            <h3 className="bg-primary-menu text-white py-1 rounded-md">
+          <div className="bg-slate-100 h-full flex-grow p-2 text-center rounded-md">
+            <h3 className="bg-slate-200 text-darkblue p-1 rounded-md font-semibold text-lg ">
               Specifications
             </h3>
             <div className="pt-4">
-              {itemInfo && projectSpecifications ? (
-                Object.entries(itemInfo.projectSpecifications).map(
-                  ([key, value]) => (
-                    <div key={key} className="flex px-4">
-                      <p className="font-thin">{key}:</p>
-                      <p className="font-medium pl-2">{value}</p>
-                    </div>
-                  )
-                )
+              {itemInfo && itemSpecifications ? (
+                <ItemPanelSpecsTable
+                  headers={["Seq.", "Finish Code", "Notes"]}
+                  data={
+                    itemInfo && itemInfo.itemSpecifications
+                      ? itemInfo.itemSpecifications
+                      : []
+                  }
+                  renderRow={renderSpecificationRow}
+                />
               ) : (
                 <p>No specifications</p>
               )}
@@ -119,82 +161,7 @@ const SingleItem: FC<SingleItemProps> = ({ item }: SingleItemProps) => {
 };
 
 export default SingleItem;
-/*      <div className="rounded-md flex-col h-full">
-        <div className="flex items-center justify-between w-full bg-slate-100 rounded-md p-2 mb-4">
-          <div className="grid grid-cols-3 gap-2 w-2/3 h-full">
-            {itemInfo &&
-              Object.entries(itemInfo[0]).map(([key, value]) => (
-                <div key={key} className="flex px-4">
-                  <p className="font-thin">{key}:</p>
-                  
-                </div>
-              ))}
-          </div>
-          <div className="bg-yellow-200 w-1/3 h-full">
-            <div className="relative h-full">
-             
-                <p>No image</p>
-             
-            </div>
-          </div>
-        </div>
 
-        <div className="flex items-center h-2/3 p-2">
-          <div className="bg-slate-100 h-full w-1/3 p-2 text-center rounded-md mr-2">
-            <h3 className="bg-primary-menu text-white py-1 rounded-md">
-              Dimensions
-            </h3>
-            <div className="pt-4">
-              {itemInfo && itemInfo[1] ? (
-                Object.entries(itemInfo[1]).map(([key, value]) => (
-                  <div key={key} className="flex px-4">
-                    <p className="font-thin">{key}:</p>
-                    <p className="font-medium pl-2">{value}</p>
-                  </div>
-                ))
-              ) : (
-                <p>No image</p>
-              )}
-            </div>
-          </div>
-          <div className="bg-slate-100 h-full w-1/3 p-2 text-center rounded-md mr-2">
-            <h3 className="bg-primary-menu text-white py-1 rounded-md">
-              Compositions
-            </h3>
-            <div className="pt-4">
-              {itemInfo && itemInfo[2] ? (
-                Object.entries(itemInfo[2]).map(
-                  ([key, value]) => (
-                    <div key={key} className="flex px-4">
-                      <p className="font-thin">{key}:</p>
-                      <p className="font-medium pl-2">{value}</p>
-                    </div>
-                  )
-                )
-              ) : (
-                <p>No image</p>
-              )}
-            </div>
-          </div>
-          <div className="bg-slate-100 h-full w-1/3 p-2 text-center rounded-md">
-            <h3 className="bg-primary-menu text-white py-1 rounded-md">
-              Specifications
-            </h3>
-            <div className="pt-4">
-              {itemInfo && itemInfo[3] ? (
-                Object.entries(itemInfo[3]).map(
-                  ([key, value]) => (
-                    <div key={key} className="flex px-4">
-                      <p className="font-thin">{key}:</p>
-                      <p className="font-medium pl-2">{value}</p>
-                    </div>
-                  )
-                )
-              ) : (
-                <p>No image</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+/*             thirdValue={projectItems.Item_id}
+
 */

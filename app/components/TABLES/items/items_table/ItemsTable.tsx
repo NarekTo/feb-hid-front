@@ -11,7 +11,7 @@ import {
   ColumnMeta,
   TableOptions,
   Table,
-  SortingState, 
+  SortingState,
   ColumnFiltersState,
   Row,
 } from "@tanstack/react-table";
@@ -53,15 +53,15 @@ import {
   updateItemsDetails,
   updateRow,
 } from "../../../../utils/api";
-import { CopyButton } from "./components/topMenu/CopyButton";
 import {
   useClickedCellStore,
   useOptionStore,
   useStoreMark,
 } from "../../../../store/store";
 import MarkModal from "./components/ModalMark";
-import { ToggleColorButton } from "./components/topMenu/ToggleColorButton";
+import { PasteButton } from "./components/topMenu/PasteButton";
 import * as XLSX from "xlsx";
+import { ViewGroupButton } from "./components/topMenu/VIewGroupButton";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -112,7 +112,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [markedRow, setMarkedRow] = useState(null);
   const isAnyRowSelected = Object.values(rowSelection).some((value) => value);
-
+  const [groupViewActive, setGroupViewActive] = useState(true);
   const tableRef = useRef(null);
   const virtualRef = useRef(null);
   const job_id = searchParams.get("job_id") as string;
@@ -123,8 +123,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const setSelectedRow = useOptionStore((state) => state.setSelectedRow);
   const setSelectedCell = useClickedCellStore((state) => state.setClickedCell);
   const selectedCell = useClickedCellStore((state) => state.clickedCell);
-  const { setAction, action, setCheckboxOptions, checkboxOptions } =
-    useStoreMark();
+  const { setAction, action, checkboxOptions } = useStoreMark();
 
   //------------------------------------COLUMNS
   const columns: ColumnDef<ProjectItems>[] = useMemo(
@@ -181,9 +180,10 @@ export const ItemsTable = React.memo(function ItemsTable({
         id: "item_image",
         header: "Item Image",
         accessorKey: "item_image",
-        cell: (cellInfo) => imageCellRenderer({ 
-          getValue: () => cellInfo.row.original.image_url,
-        }),
+        cell: (cellInfo) =>
+          imageCellRenderer({
+            getValue: () => cellInfo.row.original.image_url,
+          }),
       },
       {
         id: "job_id",
@@ -900,7 +900,6 @@ export const ItemsTable = React.memo(function ItemsTable({
     });
   });
 
-  //  console.log("cell refs", cellRefs.current);
   //------------------------------------TABLE
   const table = useReactTable({
     data: tableData,
@@ -1018,6 +1017,18 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleDelete = () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
     // Get the selected rows
     const selectedRows = getSelectedRows(rowSelection, tableData);
     if (selectedRows.length === 0) {
@@ -1090,6 +1101,18 @@ export const ItemsTable = React.memo(function ItemsTable({
   };
 
   const handleDuplicate = async () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
     // Check if the user has "W" authorisation
     const { batch, items } = await fetchRowData(
       Number(job_id),
@@ -1210,6 +1233,159 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   const handleOpening = () => {
     setOpeningMenu(!openingMenu);
+  };
+
+  const handleMark = () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
+    if (markedRow) {
+      setMarkedRow(null);
+    } else if (selectedRow) {
+      setShowMarkModal(!showMarkModal);
+      setMarkedRow(selectedRow);
+      selectedRow && getRowStyles(selectedRow);
+    }
+  };
+
+  const handlePaste = async () => {
+    const marked = await fetchItemDetails(markedRow.Item_id, session);
+    const selectedRows = getSelectedRows(rowSelection, tableData);
+    const canUpdateAll = selectedRows.every((row) =>
+      ["IB", "ID", "IDR", "IXH"].includes(row.status_code)
+    );
+
+    if (!canUpdateAll) {
+      handleMerge(marked, checkboxOptions, selectedRows);
+      /*
+      if (marked) {
+        // Replace with your actual condition
+
+        // Show the modal with the success message
+        setShowModal(true);
+        setModalConfig({
+          text: `Items successfully pasted from row ${
+            markedRow.Item_id
+          } to row(s) ${selectedRows.map((row) => row.Item_id).join(", ")}.`,
+          button1Text: "OK",
+          button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
+          button2Text: "",
+          button2Action: () => {},
+        });
+        setRowSelection({});
+      }
+      */
+    } else {
+      console.error(
+        "Update can only be performed on items with status codes IB, ID, IDR, IXH"
+      );
+    }
+    setMarkedRow(null);
+  };
+
+  const handleMerge = async (marked, options, selectedRows) => {
+    const keysToUpdate = Object.keys(options).filter((key) => options[key]);
+    const updatedItems = [];
+    let errorOccurred = false;
+
+    for (const row of selectedRows) {
+      const item_id = row.Item_id.trim();
+      for (const key of keysToUpdate) {
+        let value = marked[key];
+        if (Array.isArray(value)) {
+          value = value.map((item) => ({
+            ...item,
+            item_id: item_id, // Use the item_id of the row you want to update
+          }));
+        }
+        const updated = await updateItemsDetails(
+          key,
+          item_id,
+          value,
+          action,
+          session
+        );
+        if (updated) {
+          updatedItems.push(`${item_id} (${key})`);
+          console.log(`Updated ${key} for item ${item_id}`);
+        } else {
+          errorOccurred = true;
+          console.error(`Failed to update ${key} for item ${item_id}`);
+        }
+      }
+    }
+    setSelectedRow(null);
+    setRowSelection({});
+    setAction("");
+
+    if (errorOccurred) {
+      setModalConfig({
+        ...modalConfig,
+        text: "There was a problem, please try again.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
+      });
+    } else {
+      setModalConfig({
+        ...modalConfig,
+        text: `Items ${updatedItems.join(", ")} were updated.`,
+        button1Text: "OK",
+        button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
+      });
+    }
+
+    setShowModal(true);
+
+    return selectedRows;
+  };
+
+  const exportToExcel = (tableData) => {
+    console.log("batchNum", batchNum);
+    console.log("project", project);
+
+    const ws = XLSX.utils.json_to_sheet(tableData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, `${project}-Batch${batchNum}-Items.xlsx`);
+  };
+  const viewGroup = () => {
+    if (!selectedRow) {
+      // Assuming selectedRow is null or undefined when no row is selected
+      setModalConfig({
+        text: "Please select a row to perform this action.",
+        button1Text: "OK",
+        button1Action: () => setShowModal(false),
+        button2Text: "",
+        button2Action: () => {},
+      });
+      setShowModal(true);
+      return;
+    }
+    setGroupViewActive((prevGroupViewActive) => {
+      const newGroupViewActive = !prevGroupViewActive;
+      if (!newGroupViewActive && selectedRow) {
+        // Add a new filter for the group_number column
+        setColumnFilters((oldFilters) => [
+          ...oldFilters,
+          { id: "group_number", value: selectedRow.group_number },
+        ]);
+      } else {
+        // Remove the filter for the group_number column
+        setColumnFilters((oldFilters) =>
+          oldFilters.filter((filter) => filter.id !== "group_number")
+        );
+      }
+      return newGroupViewActive;
+    });
   };
 
   //----------------------------------USE EFFECTS AND SOCKETS
@@ -1359,115 +1535,6 @@ export const ItemsTable = React.memo(function ItemsTable({
   }, [selectedCell]);
 
   //------------------------------------MARK AND PASTE FUNCTIONS
-
-  const handleMark = () => {
-    if (markedRow) {
-      setMarkedRow(null);
-    } else if (selectedRow) {
-      setShowMarkModal(!showMarkModal);
-      setMarkedRow(selectedRow);
-      selectedRow && getRowStyles(selectedRow);
-    }
-  };
-
-  const handlePaste = async () => {
-    const marked = await fetchItemDetails(markedRow.Item_id, session);
-    const selectedRows = getSelectedRows(rowSelection, tableData);
-    const canUpdateAll = selectedRows.every((row) =>
-      ["IB", "ID", "IDR", "IXH"].includes(row.status_code)
-    );
-
-    if (!canUpdateAll) {
-      handleMerge(marked, checkboxOptions, selectedRows);
-      /*
-      if (marked) {
-        // Replace with your actual condition
-
-        // Show the modal with the success message
-        setShowModal(true);
-        setModalConfig({
-          text: `Items successfully pasted from row ${
-            markedRow.Item_id
-          } to row(s) ${selectedRows.map((row) => row.Item_id).join(", ")}.`,
-          button1Text: "OK",
-          button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
-          button2Text: "",
-          button2Action: () => {},
-        });
-        setRowSelection({});
-      }
-      */
-    } else {
-      console.error(
-        "Update can only be performed on items with status codes IB, ID, IDR, IXH"
-      );
-    }
-    setMarkedRow(null);
-  };
-
-  const handleMerge = async (marked, options, selectedRows) => {
-    const keysToUpdate = Object.keys(options).filter((key) => options[key]);
-    const updatedItems = [];
-    let errorOccurred = false;
-
-    for (const row of selectedRows) {
-      const item_id = row.Item_id.trim();
-      for (const key of keysToUpdate) {
-        let value = marked[key];
-        if (Array.isArray(value)) {
-          value = value.map((item) => ({
-            ...item,
-            item_id: item_id, // Use the item_id of the row you want to update
-          }));
-        }
-        const updated = await updateItemsDetails(
-          key,
-          item_id,
-          value,
-          action,
-          session
-        );
-        if (updated) {
-          updatedItems.push(`${item_id} (${key})`);
-          console.log(`Updated ${key} for item ${item_id}`);
-        } else {
-          errorOccurred = true;
-          console.error(`Failed to update ${key} for item ${item_id}`);
-        }
-      }
-    }
-    setSelectedRow(null);
-    setRowSelection({});
-    setAction("");
-
-    if (errorOccurred) {
-      setModalConfig({
-        ...modalConfig,
-        text: "There was a problem, please try again.",
-        button1Text: "OK",
-        button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
-      });
-    } else {
-      setModalConfig({
-        ...modalConfig,
-        text: `Items ${updatedItems.join(", ")} were updated.`,
-        button1Text: "OK",
-        button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
-      });
-    }
-
-    setShowModal(true);
-
-    return selectedRows;
-  };
-
-  function exportToExcel(tableData) {
-    const ws = XLSX.utils.json_to_sheet(tableData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, "table_data.xlsx");
-  }
-
   return (
     <div ref={tableRef}>
       <Modal
@@ -1493,7 +1560,7 @@ export const ItemsTable = React.memo(function ItemsTable({
         />
       )}
       <div
-        style={{ height: openingMenu ? "80px" : "40px" }}
+        style={{ height: openingMenu ? "80px" : "30px" }}
         className="flex items-start duration-500 ease-in-out mb-2"
       >
         <div className="absolute flex gap-2">
@@ -1501,23 +1568,21 @@ export const ItemsTable = React.memo(function ItemsTable({
           <AddButton description="Add" onclick={handleAdd} row={selectedRow} />
           <TopMenuButton description="Delete" onClick={handleDelete} />
           <TopMenuButton description="Duplicate" onClick={handleDuplicate} />
-          <ToggleColorButton
-            toggle={selectedColumn}
-            description="Copy Down"
-            onclick={() => setSelectedColumn(null)}
-          />
+
           <TopMenuButton
             description="Mark/Unmark"
             onClick={() => handleMark()}
           />
-          <ToggleColorButton
+          <PasteButton
             description="Paste"
             onclick={() => handlePaste()}
             toggle={isAnyRowSelected && action !== ""}
           />
-          <TopMenuButton
-            description="View Group"
-            onClick={() => console.log("clicking")}
+
+          <ViewGroupButton
+            onclick={() => viewGroup()}
+            toggle={groupViewActive}
+            row={selectedRow}
           />
 
           <TopMenuButton
@@ -1526,7 +1591,7 @@ export const ItemsTable = React.memo(function ItemsTable({
           />
         </div>
         {openingMenu && (
-          <div className="flex w-full p-2 text-xs shadow-lg mt-12 rounded-md bg-slate-100">
+          <div className="flex w-full p-2 text-xs shadow-lg mt-8 rounded-md bg-slate-100">
             {table.getAllLeafColumns().map((column) => {
               return <HideCheckBox column={column} key={column.id} />;
             })}
@@ -1645,35 +1710,11 @@ export const ItemsTable = React.memo(function ItemsTable({
 });
 
 /*
-
-  const handleDelete = async () => {
-    console.log("selectedRow from delete", selectedRow);
-    console.log("row selection", rowSelection);
-    if (selectedRow && "Item_id" in selectedRow) {
-      const itemId = selectedRow["Item_id"] as string;
-      try {
-        await deleteRow(itemId, session);
-      } catch (error) {
-        console.error("Failed to delete row", error);
-      }
-    } else if (Object.keys(rowSelection).length > 0) {
-      // Get the selected rows
-      const selectedRows = Object.entries(rowSelection)
-        .filter(([key, value]) => value && tableData[key]) // Ensure the row is selected and exists in tableData
-        .map(([key]) => tableData[key]);
-
-      // Delete each selected row
-      for (const row of selectedRows) {
-        const itemId = row.Item_id;
-        try {
-          await deleteRow(itemId, session);
-        } catch (error) {
-          console.error("Failed to delete row", error);
-        }
-      }
-    }
-    setRowSelection({});
-  };
+          <ToggleColorButton
+            toggle={selectedColumn}
+            description="Copy Down"
+            onclick={() => setSelectedColumn(null)}
+          />
 
 
 */

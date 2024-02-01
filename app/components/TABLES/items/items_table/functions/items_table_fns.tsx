@@ -3,7 +3,6 @@ import {
   ProjectItems,
   ProjectItemsWithSelect,
   Session,
-  ProjectItemImages,
 } from "../../../../../types";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
 import { SortingFn, sortingFns } from "@tanstack/react-table";
@@ -13,11 +12,8 @@ import { updateRow } from "../../../../../utils/api";
 import {
   useClickedCellStore,
   useOptionStore,
-  useStoredValueStore,
 } from "../../../../../store/store";
-import Image from "next/image";
 
-// --
 interface LockCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
   row: { index: number; original: { item_status: string } };
@@ -220,12 +216,11 @@ export const customCellRenderer = ({
   );
 };
 
-export const imageCellRenderer = ({getValue}: imageCellRendererProps) => {
+export const imageCellRenderer = ({ getValue }: imageCellRendererProps) => {
   const value = getValue();
-  console.log("value", value);
   return (
-    <img src={value} width={100} height={100} alt="Item Image"/>
-   
+    <img src={value} width={100} height={100} alt="Item Image" />
+
     //  <Image src={value} width={100} height={100} alt="Item Image" />
   );
 };
@@ -444,7 +439,7 @@ export const newRow: ProjectItemsWithSelect = {
   supplier_notes: "",
   created_date: null,
   modified_date: null,
-  image_url: ""
+  image_url: "",
 };
 
 // old real delete row function
@@ -469,125 +464,3 @@ export const deleteRow = async (itemId: string, session: Session | null) => {
     console.error("Error deleting row:", error);
   }
 };
-
-/*
-
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (selectedCell) {
-        if (event.ctrlKey && event.key === "d" && selectedCell.index !== 0) {
-          event.preventDefault();
-          event.stopPropagation();
-          // Get the celLS ID
-          const cellAboveId = `${selectedCell.index - 1}-${selectedCell.id}`;
-          const cellBelowId = `${selectedCell.index + 1}-${selectedCell.id}`;
-          //Get the cell refs
-          const aboveCell = cellRefs[cellAboveId];
-          const belowCell = cellRefs[cellBelowId];
-          console.log("above cell", aboveCell);
-          console.log("below cell", belowCell);
-          if (
-            aboveCell &&
-            aboveCell.current &&
-            belowCell &&
-            belowCell.current
-          ) {
-            const newValue = aboveCell.current.value;
-            belowCell.current.value = newValue;
-            console.log("below cell", belowCell.current.value);
-            handleCellValueChange(
-              selectedCell.index,
-              selectedCell.id,
-              newValue
-            );
-            if (cellRefs[cellBelowId]) {
-              cellRefs[cellBelowId]?.current?.focus();
-              const nextRowIndex = selectedCell.index + 1;
-              console.log("next row index", nextRowIndex);
-              setSelectedRow(actualTable.rows[nextRowIndex].original);
-              console.log(
-                "selected row",
-                actualTable.rows[nextRowIndex].original
-              );
-              setSelectedCell({
-                index: nextRowIndex,
-                id: selectedCell.id,
-              });
-            }
-            // Check if the selected cell is in the last row
-          } else if (selectedCell.index === actualTable.rows.length - 1) {
-            console.log("This is the last row, no cell below");
-          }
-        } else if (event.key === "ArrowUp") {
-          event.preventDefault();
-          if (selectedCell.index > 0) {
-            const cellAboveId = `${selectedCell.index - 1}-${selectedCell.id}`;
-            if (cellRefs[cellAboveId]) {
-              cellRefs[cellAboveId]?.current?.focus();
-              setSelectedCell({
-                index: selectedCell.index - 1,
-                id: selectedCell.id,
-              });
-            }
-          }
-        } else if (event.key === "ArrowDown") {
-          event.preventDefault();
-          const cellBelowId = `${selectedCell.index + 1}-${selectedCell.id}`;
-          if (cellRefs[cellBelowId]) {
-            cellRefs[cellBelowId]?.current?.focus();
-            setSelectedCell({
-              index: selectedCell.index + 1,
-              id: selectedCell.id,
-            });
-          }
-        } else if (event.key === "ArrowRight") {
-          event.preventDefault();
-          const columns = table
-            .getAllLeafColumns()
-            .filter((column) => column.getIsVisible());
-          const columnIndex = columns.findIndex(
-            (column) => column.id === selectedCell.id
-          );
-          if (columnIndex < columns.length - 1) {
-            const cellRightId = `${selectedCell.index}-${
-              columns[columnIndex + 1].id
-            }`;
-            if (cellRefs[cellRightId]) {
-              cellRefs[cellRightId]?.current?.focus();
-              setSelectedCell({
-                index: selectedCell.index,
-                id: columns[columnIndex + 1].id,
-              });
-            }
-          }
-        } else if (event.key === "ArrowLeft") {
-          event.preventDefault();
-          const columns = table
-            .getAllLeafColumns()
-            .filter((column) => column.getIsVisible());
-          const columnIndex = columns.findIndex(
-            (column) => column.id === selectedCell.id
-          );
-          if (columnIndex > 0) {
-            const cellLeftId = `${selectedCell.index}-${
-              columns[columnIndex - 1].id
-            }`;
-            if (cellRefs[cellLeftId]) {
-              cellRefs[cellLeftId]?.current?.focus();
-              setSelectedCell({
-                index: selectedCell.index,
-                id: columns[columnIndex - 1].id,
-              });
-            }
-          }
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedCell]);
-*/
