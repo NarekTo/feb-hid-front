@@ -218,7 +218,6 @@ export const updateItemsDetails = async (
 };
 
 //----------------------------------- CURRENCY FETCHING
-
 export const postNewCurrency = async (
   newCurrencyData: Record<string, unknown>,
   session: Session | null
@@ -240,13 +239,48 @@ export const postNewCurrency = async (
 
     if (response.ok) {
       console.log("New currency added successfully");
-      return true;
+      const addedCurrency = await response.json(); // Get the added currency from the response
+      return addedCurrency;
     } else {
       console.error("Failed to add new currency");
       return false;
     }
   } catch (error) {
     console.error("Error adding new currency:", error);
+    return false;
+  }
+};
+
+export const deleteCurrency = async (
+  currencyCode: string,
+  session: Session | null
+): Promise<boolean> => {
+  if (!session) {
+    console.error("Session not available");
+    return false;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/currencies/${currencyCode}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+      }
+    );
+
+    if (response.ok) {
+      console.log("Currency deleted successfully");
+      return true;
+    } else {
+      console.error("Failed to delete currency");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error deleting currency:", error);
     return false;
   }
 };

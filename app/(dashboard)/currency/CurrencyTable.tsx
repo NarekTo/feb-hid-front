@@ -5,7 +5,7 @@ import MainButton from "../../components/UI_ATOMS/MainButton";
 import TitleHeader from "../../components/UI_SECTIONS/page/TitleHeader";
 import { useSession } from "next-auth/react";
 import { Session } from "../../types";
-import { postNewCurrency } from "../../utils/api";
+import { deleteCurrency, postNewCurrency } from "../../utils/api";
 import { MainListBox } from "../../components/UI_ATOMS/MainListBox";
 import { currency_info } from "../../utils/constants";
 import { MdClose } from "react-icons/md";
@@ -67,20 +67,28 @@ const CurrencyTable = ({ currency }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const success = await postNewCurrency(newCurrency, session);
+
     if (success) {
-      // Close the popup and refresh the currency table data
+      console.log("Item added successfully", success);
       setShowPopup(false);
-      // You might want to call a function to re-fetch the currency data here
+      setCurrencyData((currentData) => [...currentData, success]);
+      fetchExchangeRates();
+      // The currencyData state is already updated with the optimistic update
     }
   };
 
-  const handleDeleteCurrency = (currencyCode) => {
+  const handleDeleteCurrency = async (currencyCode) => {
     setCurrencyData((currentData) =>
       currentData.filter((currency) => currency.currency_code !== currencyCode)
     );
+
+    const success = await deleteCurrency(currencyCode, session);
+    if (success) {
+      console.log("Item deleted successfully");
+    }
   };
 
-  useEffect(() => {
+  const fetchExchangeRates = () => {
     const url = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/${baseCurrency}`;
 
     fetch(url)
@@ -121,6 +129,9 @@ const CurrencyTable = ({ currency }) => {
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
+  };
+  useEffect(() => {
+    fetchExchangeRates();
   }, [baseCurrency]);
 
   return (
