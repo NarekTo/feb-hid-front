@@ -30,7 +30,10 @@ export const addRow = async (
 };
 
 // FETCH IMAGE
-export const fetchItemImage = async (itemId: ProjectItemImages, session: Session | null) => {
+export const fetchItemImage = async (
+  itemId: ProjectItemImages,
+  session: Session | null
+) => {
   if (!session) {
     console.error("Session not available");
     return;
@@ -210,6 +213,40 @@ export const updateItemsDetails = async (
     }
   } catch (error) {
     console.error("Error updating data:", error);
+    return false;
+  }
+};
+
+//----------------------------------- CURRENCY FETCHING
+
+export const postNewCurrency = async (
+  newCurrencyData: Record<string, unknown>,
+  session: Session | null
+): Promise<boolean> => {
+  if (!session) {
+    console.error("Session not available");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3000/currencies`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify(newCurrencyData),
+    });
+
+    if (response.ok) {
+      console.log("New currency added successfully");
+      return true;
+    } else {
+      console.error("Failed to add new currency");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error adding new currency:", error);
     return false;
   }
 };
