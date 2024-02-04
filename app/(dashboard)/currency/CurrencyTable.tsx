@@ -9,6 +9,7 @@ import { deleteCurrency, postNewCurrency } from "../../utils/api";
 import { MainListBox } from "../../components/UI_ATOMS/MainListBox";
 import { currency_info } from "../../utils/constants";
 import { MdClose } from "react-icons/md";
+
 const CurrencyTable = ({ currency }) => {
   const { data: session } = useSession() as { data: Session | null };
   const [currencyData, setCurrencyData] = useState([]);
@@ -22,10 +23,12 @@ const CurrencyTable = ({ currency }) => {
     currency_symbol: currency_info["SAR"].symbol,
     country_code: currency_info["SAR"].countryCode,
   });
-  const currencyOptions = currency.map((info) => ({
-    id: info.currency_code,
-    name: `${info.currency_code} - ${info.currency_description}`,
-  }));
+  const [currencyOptions, setCurrencyOptions] = useState(
+    currency.map((info) => ({
+      id: info.currency_code,
+      name: `${info.currency_code} - ${info.currency_description}`,
+    }))
+  );
 
   const handleBaseCurrencyChange = (selectedOption) => {
     setBaseCurrency(selectedOption.id);
@@ -74,6 +77,13 @@ const CurrencyTable = ({ currency }) => {
       setCurrencyData((currentData) => [...currentData, success]);
       fetchExchangeRates();
       // The currencyData state is already updated with the optimistic update
+      setCurrencyOptions((currentOptions) => [
+        ...currentOptions,
+        {
+          id: newCurrency.currency_code,
+          name: `${newCurrency.currency_code} - ${newCurrency.currency_description}`,
+        },
+      ]);
     }
   };
 
@@ -84,7 +94,9 @@ const CurrencyTable = ({ currency }) => {
 
     const success = await deleteCurrency(currencyCode, session);
     if (success) {
-      console.log("Item deleted successfully");
+      setCurrencyOptions((currentOptions) =>
+        currentOptions.filter((option) => option.id !== currencyCode)
+      );
     }
   };
 
@@ -242,12 +254,14 @@ const CurrencyTable = ({ currency }) => {
                     {item.currency_date}
                   </td>
                   <td className="">
-                    <button
-                      onClick={() => handleDeleteCurrency(item.currency_code)}
-                      className="text-red-500 hover:text-red-700 flex items-center justify-center h-full"
-                    >
-                      <MdClose size={20} />
-                    </button>
+                    {item.currency_code !== "SAR" && (
+                      <button
+                        onClick={() => handleDeleteCurrency(item.currency_code)}
+                        className="text-red-500 hover:text-red-700 flex items-center justify-center h-full"
+                      >
+                        <MdClose size={20} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

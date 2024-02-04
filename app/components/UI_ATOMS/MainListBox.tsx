@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { FC, Fragment } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { TiArrowUnsorted } from "react-icons/ti";
@@ -58,8 +58,8 @@ export const MainListBox: FC<MainListBoxProps> = ({
                   }
                   value={item}
                 >
-                  {({ selected }) => (
-                    <>
+                  {({ selected, active }) => (
+                    <div className="flex items-center justify-between">
                       <span
                         className={`block truncate ${
                           selected ? "font-medium" : "font-normal"
@@ -70,11 +70,16 @@ export const MainListBox: FC<MainListBoxProps> = ({
                           : item[displayKey]}
                       </span>
                       {selected ? (
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white">
-                          <TbCheck className="h-5 w-5" aria-hidden="true" />
+                        <span className=" inset-y-0 left-0 flex items-center pl-3 text-white">
+                          <TbCheck
+                            className={`h-5 w-5 ${
+                              active ? "text-white" : "text-black"
+                            }`}
+                            aria-hidden="true"
+                          />
                         </span>
                       ) : null}
-                    </>
+                    </div>
                   )}
                 </Listbox.Option>
               ))}
