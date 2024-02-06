@@ -224,3 +224,33 @@ export interface Row {
   "shop drowing": string;
   lifeCycle: string;
 }
+
+export type ManufacturerInfo = {
+  name: string;
+  address?: string;
+  website?: string;
+  email?: string;
+  telephone?: string;
+};
+
+export type RowData = {
+  project: string;
+  area?: string;
+  issueDate?: string;
+  revision?: string;
+  item: string;
+  qty: number;
+  totalOrderQty: number;
+  orderNumber?: string;
+  manufacturer: ManufacturerInfo;
+  partNumber?: string;
+  dimensions?: string;
+  composition?: string;
+  notes?: string;
+  description?: string;
+  finish?: string;
+  frameSize?: string;
+  frameFitting?: string;
+  fabricFinish?: string;
+  additionalInformation?: string;
+};
