@@ -44,7 +44,8 @@ const CurrencyTable = ({ currency }) => {
     }
   };
 
-  const handleAddCurrencyClick = () => {
+  const handleAddCurrencyClick = (e) => {
+    e.preventDefault();
     setShowPopup(!showPopup);
   };
 
@@ -75,7 +76,7 @@ const CurrencyTable = ({ currency }) => {
       console.log("Item added successfully", success);
       setShowPopup(false);
       setCurrencyData((currentData) => [...currentData, success]);
-      fetchExchangeRates();
+
       // The currencyData state is already updated with the optimistic update
       setCurrencyOptions((currentOptions) => [
         ...currentOptions,
@@ -84,6 +85,8 @@ const CurrencyTable = ({ currency }) => {
           name: `${newCurrency.currency_code} - ${newCurrency.currency_description}`,
         },
       ]);
+
+      fetchExchangeRates();
     }
   };
 
@@ -142,6 +145,7 @@ const CurrencyTable = ({ currency }) => {
         console.error("Error fetching data:", error);
       });
   };
+
   useEffect(() => {
     fetchExchangeRates();
   }, [baseCurrency]);
