@@ -49,6 +49,7 @@ export interface itemInfoType {
   itemSpecifications: ProjectItemSpecs[];
   itemCompositions: ProjectItemCompositions[];
   itemDimensions: ProjectItemDimensions[];
+  itemImages: ProjectItemImages[];
 }
 
 //------------------------------------SQL TABLES TYPES

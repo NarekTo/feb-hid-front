@@ -36,7 +36,7 @@ const SingleItemForm = ({ itemInfo }) => {
   };
 
   return (
-    <div className="grid grid-cols-3 gap-2 w-2/3 h-full ">
+    <div className="grid grid-cols-3 gap-2 w-2/3 h-full p-2 ">
       <div>
         <EditableInput
           initialValue={values.location_code}

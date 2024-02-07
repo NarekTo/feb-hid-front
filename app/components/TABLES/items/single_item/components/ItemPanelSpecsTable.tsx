@@ -20,6 +20,7 @@ const ItemPanelSpecsTable: React.FC<ItemPanelSpecsTableProps> = ({
           <tr>
             {headers.map((header, index) => (
               <th key={index} className="px-4 py-2 text-left ">
+      {/* <span className="text-2xl font-bold">Specifications</span> */}
                 {header}
               </th>
             ))}
