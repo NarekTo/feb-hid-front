@@ -5,7 +5,7 @@ import { FC, useEffect, useState } from "react";
 import TitleHeader from "../../../../../components/UI_SECTIONS/page/TitleHeader";
 import { itemInfoType } from "../../../../../types";
 import ItemPanelSpecsTable from "../../../../../components/TABLES/items/single_item/ItemPanelSpecsTable";
-
+import { fetchImage } from "../../../../../utils/api";
 export interface SingleItemProps {
   itemDetail: itemInfoType;
 }
@@ -20,6 +20,26 @@ const SingleItem: FC<SingleItemProps> = ({ itemDetail }: SingleItemProps) => {
   useEffect(() => {
     setItemInfo(itemDetail);
   }, []);
+
+  const [mainImage, setMainImage] = useState("");
+  const [carouselImages, setCarouselImages] = useState([]);
+
+  useEffect(() => {
+    // Fetch the main image
+    fetchImage(itemDetail.item.Item_id, 1).then((image) =>
+      setMainImage(image.toString())
+    );
+
+    // Fetch the carousel images
+    const carouselPromises = [];
+    carouselPromises.push(fetchImage(itemDetail.item.Item_id, 2));
+    for (let i = 2; i <= 4; i++) {
+      carouselPromises.push(fetchImage(itemDetail.item.Item_id, i));
+    }
+    console.log("carouselPromises", carouselPromises);
+
+    Promise.all(carouselPromises).then(setCarouselImages);
+  }, [itemDetail.item.Item_id]);
 
   const getReadableSpecCode = (code) => {
     switch (code) {
@@ -82,13 +102,29 @@ const SingleItem: FC<SingleItemProps> = ({ itemDetail }: SingleItemProps) => {
                   ))
               : "No info"}
           </div>
+
           <div className=" w-1/3 flex justify-center">
-            <div className="flex h-full items-center justify-center">
-              {item.image_url ? (
-                <img src={item.image_url} alt="Item Image" />
-              ) : (
-                <p className="h-full">Add Images</p>
-              )}
+          <div>
+              <div>
+                <img src={mainImage} alt="Main Image" />
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  paddingTop: "10px",
+                  gap: "15px",
+                }}
+              >
+                {carouselImages.map((imgUrl, index) => (
+                  <img
+                    key={index}
+                    src={imgUrl}
+                    alt={`Image ${index + 1}`}
+                    style={{ width: "100px", height: "100px" }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

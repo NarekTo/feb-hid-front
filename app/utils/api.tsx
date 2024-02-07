@@ -213,3 +213,82 @@ export const updateItemsDetails = async (
     return false;
   }
 };
+
+
+//----------------------------------- IMAGES FETCHING
+// CREATE Image
+export const createImage = async (
+  type: string,
+  itemId: string, 
+  value: FormData, 
+  session: Session) => {
+  try {
+    console.log("id for images", itemId);
+    const response = await fetch(`http://localhost:3000/images/${itemId.trim()}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify({value, itemId}),
+      // body: imageData, // Assuming image data is sent as FormData
+    });
+
+    if (response.ok) {
+      console.log("Image created successfully");
+    } else {
+      console.error("Failed to create image");
+    }
+  } catch (error) {
+    console.error("Error creating image:", error);
+  }
+};
+
+// READ Image
+
+export const fetchImage = async (itemId: string, imageSequence: number) => {
+    const imageUrl = `https://hidpictures2024.blob.core.windows.net/pictures-31-enero-2024/item-${itemId.trim()}-image-${imageSequence}.jpg`;
+  return imageUrl;
+};
+
+
+// UPDATE Image
+export const updateImage = async (itemId: string, imageData: FormData, session: Session) => {
+  try {
+    const response = await fetch(`http://localhost:3000/images/${itemId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: imageData, // Assuming image data is sent as FormData
+    });
+
+    if (response.ok) {
+      console.log("Image updated successfully");
+    } else {
+      console.error("Failed to update image");
+    }
+  } catch (error) {
+    console.error("Error updating image:", error);
+  }
+};
+
+// DELETE Image
+export const deleteImage = async (itemId: string, session: Session) => {
+  try {
+    const response = await fetch(`http://localhost:3000/images/${itemId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+
+    if (response.ok) {
+      console.log("Image deleted successfully");
+    } else {
+      console.error("Failed to delete image");
+    }
+  } catch (error) {
+    console.error("Error deleting image:", error);
+  }
+};

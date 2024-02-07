@@ -8,11 +8,12 @@ import { MdKeyboardArrowDown, MdKeyboardArrowUp, MdLock } from "react-icons/md";
 import { SortingFn, sortingFns } from "@tanstack/react-table";
 import { compareItems } from "@tanstack/match-sorter-utils";
 import { useSession } from "next-auth/react";
-import { updateRow } from "../../../../../utils/api";
+import { updateRow, fetchImage } from "../../../../../utils/api";
 import {
   useClickedCellStore,
   useOptionStore,
 } from "../../../../../store/store";
+import Image from "next/image";
 
 interface LockCellRendererProps {
   getValue: () => any; // replace 'any' with the actual type
@@ -216,12 +217,31 @@ export const customCellRenderer = ({
   );
 };
 
-export const imageCellRenderer = ({ getValue }: imageCellRendererProps) => {
-  const value = getValue();
-  return (
-    <img src={value} width={100} height={100} alt="Item Image" />
 
-    //  <Image src={value} width={100} height={100} alt="Item Image" />
+
+export const imageCellRenderer = ({ itemId, imageSequence }) => {
+  const [imageUrl, setImageUrl] = useState("");
+
+  useEffect(() => {
+    const fetchAndSetImage = async () => {
+      try {
+        const imageData = await fetchImage(itemId, 1); // Assuming session is the second required argument
+        if (imageData) {
+          console.log("imageData", imageData);
+          setImageUrl(imageData); // Assuming the fetched imageData contains a url field
+        }
+      } catch (error) {
+        console.error("Failed to fetch image:", error);
+      }
+    };
+
+    fetchAndSetImage();
+  }, [itemId]); // Re-fetch the image if the itemId changes
+
+  return imageUrl ? (
+    <img src={imageUrl} alt="Item" />
+  ) : (
+    <p>No image available</p>
   );
 };
 

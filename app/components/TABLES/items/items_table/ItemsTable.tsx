@@ -46,6 +46,10 @@ import { AddButton } from "./components/topMenu/AddButton";
 import HideCheckBox from "./components/HideCheckBox";
 import Modal from "../../../UI_SECTIONS/page/Modal";
 import {
+  createImage,
+  fetchImage,
+  updateImage,
+  deleteImage,
   addRow,
   changeRowStatus,
   fetchItemDetails,
@@ -182,7 +186,8 @@ export const ItemsTable = React.memo(function ItemsTable({
         accessorKey: "item_image",
         cell: (cellInfo) =>
           imageCellRenderer({
-            getValue: () => cellInfo.row.original.image_url,
+            itemId: cellInfo.row.original.Item_id,
+            imageSequence: 1,
           }),
       },
       {
