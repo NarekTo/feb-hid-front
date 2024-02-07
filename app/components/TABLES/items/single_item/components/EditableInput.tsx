@@ -1,10 +1,14 @@
+import { useSession } from "next-auth/react";
 import React, { useState, useEffect } from "react";
+import { Session } from "../../../../../types";
+import { updateRow } from "../../../../../utils/api";
 
 interface EditableInputProps {
   initialValue: string;
   onSave: (value: string) => void; // Function to call when saving the new value
   name: string; // Identifier for the input, useful for onSave
   label: string; // Label for the input
+  Item_id: string;
 }
 
 const EditableInput: React.FC<EditableInputProps> = ({
@@ -12,15 +16,24 @@ const EditableInput: React.FC<EditableInputProps> = ({
   onSave,
   name,
   label,
+  Item_id,
 }) => {
   const [value, setValue] = useState(initialValue);
   const [isEditable, setIsEditable] = useState(false);
+  const { data: session } = useSession() as { data: Session | null };
 
-  const handleBlur = () => {
+  const handleBlur = async () => {
     if (value !== initialValue) {
-      onSave(value);
+      const updated = await updateRow(
+        Item_id.trim(),
+        { [name]: value },
+        session
+      );
+      if (updated) {
+        // Update your state or perform any other actions needed after successful update
+      }
     }
-    setIsEditable(false);
+    setIsEditable(null);
   };
 
   useEffect(() => {
@@ -36,7 +49,7 @@ const EditableInput: React.FC<EditableInputProps> = ({
         name={name}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onBlur={handleBlur}
+        onBlur={() => handleBlur()}
         onFocus={() => setIsEditable(true)}
         readOnly={!isEditable}
       />

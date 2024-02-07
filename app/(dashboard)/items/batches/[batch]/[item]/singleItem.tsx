@@ -96,25 +96,18 @@ const SingleItem: FC<SingleItemProps> = ({ itemDetail }: SingleItemProps) => {
             "No info"
           )}
 
-          <div className=" w-1/3 flex justify-center">
-            <div>
-              <div>
-                <img src={mainImage} alt="Main Image" />
+          <div className=" w-1/3 flex justify-center items-start h-full ">
+            <div className="flex flex-col">
+              <div className="pt-2 pr-2">
+                <img src={mainImage} alt="Main Image" className="rounded-md" />
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  paddingTop: "10px",
-                  gap: "15px",
-                }}
-              >
+              <div className="flex justify-center pt-2 pr-2 gap-2 flex-wrap">
                 {carouselImages.map((imgUrl, index) => (
                   <img
                     key={index}
                     src={imgUrl}
                     alt={`Image ${index + 1}`}
-                    style={{ width: "100px", height: "100px" }}
+                    className="w-20 h-20 rounded-md flex-grow"
                   />
                 ))}
               </div>
