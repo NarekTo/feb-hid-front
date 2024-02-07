@@ -203,7 +203,8 @@ export const ItemsTable = React.memo(function ItemsTable({
         accessorKey: "item_image",
         cell: (cellInfo) =>
           imageCellRenderer({
-            getValue: () => cellInfo.row.original.image_url,
+            itemId: cellInfo.row.original.Item_id,
+            imageSequence: 1,
           }),
       },
       {
