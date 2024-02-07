@@ -74,6 +74,7 @@ import EvaluateCostsModal from "./components/evaluateModal";
 import SpecDocument from "../../../PDF/ITEMS/ViewSpecs";
 import { mockRowData } from "../../../../utils/mock";
 import PdfViewerComponent from "../../../PDF/ITEMS/pdfViewer";
+import { MdClose } from "react-icons/md";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -1474,6 +1475,7 @@ export const ItemsTable = React.memo(function ItemsTable({
       console.log("WebSocket error: ", error);
     });
     socket.on("itemUpdated", (updatedItem) => {
+      console.log("Received updated item: ", updatedItem);
       // Trim all string values in the updated item
       let trimmedItem = { ...updatedItem };
       for (let key in trimmedItem) {
@@ -1588,9 +1590,14 @@ export const ItemsTable = React.memo(function ItemsTable({
 
   //------------------------------------MARK AND PASTE FUNCTIONS
 
-  const viewSpecs = () => {
-    console.log("view specs");
-    setPdfDoc(true); // This should trigger a re-render and show the PDFViewer
+  // Function to open the PDF modal
+  const openPdfModal = () => {
+    setPdfDoc(true);
+  };
+
+  // Function to close the PDF modal
+  const closePdfModal = () => {
+    setPdfDoc(false);
   };
 
   return (
@@ -1613,7 +1620,19 @@ export const ItemsTable = React.memo(function ItemsTable({
         data={evaluateCostsData}
         onClose={() => setEvaluateModalOpen(false)}
       />
-      {pdfDoc && <PdfViewerComponent />}
+      {pdfDoc && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative mx-auto p-5  w-11/12 rounded-md ">
+            <button
+              onClick={closePdfModal}
+              className=" bg-white rounded-full absolute top-20 right-72 hover:bg-gray-200 transition duration-300 ease-in-out"
+            >
+              <MdClose size="1.5em" />
+            </button>
+            <PdfViewerComponent />
+          </div>
+        </div>
+      )}
       {clicked && (
         <ContextMenu
           top={points.y}
@@ -1656,7 +1675,10 @@ export const ItemsTable = React.memo(function ItemsTable({
             description="Evaluate"
             onClick={() => evaluateCosts()}
           />
-          <TopMenuButton description="View Specs" onClick={() => viewSpecs()} />
+          <TopMenuButton
+            description="View Specs"
+            onClick={() => openPdfModal()}
+          />
         </div>
         {openingMenu && (
           <div className="flex w-full p-2 text-xs shadow-lg mt-8 rounded-md bg-slate-100">
