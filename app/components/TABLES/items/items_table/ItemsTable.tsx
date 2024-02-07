@@ -46,10 +46,6 @@ import { AddButton } from "./components/topMenu/AddButton";
 import HideCheckBox from "./components/HideCheckBox";
 import Modal from "../../../UI_SECTIONS/page/Modal";
 import {
-  createImage,
-  fetchImage,
-  updateImage,
-  deleteImage,
   addRow,
   changeRowStatus,
   fetchItemDetails,
