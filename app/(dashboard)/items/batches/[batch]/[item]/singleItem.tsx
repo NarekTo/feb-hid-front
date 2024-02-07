@@ -4,7 +4,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { FC, useEffect, useState } from "react";
 import TitleHeader from "../../../../../components/UI_SECTIONS/page/TitleHeader";
 import { itemInfoType } from "../../../../../types";
-import ItemPanelSpecsTable from "../../../../../components/TABLES/items/single_item/ItemPanelSpecsTable";
+import ItemPanelSpecsTable from "../../../../../components/TABLES/items/single_item/components/ItemPanelSpecsTable";
+import SingleItemForm from "../../../../../components/TABLES/items/single_item/singleItemForm";
 
 export interface SingleItemProps {
   itemDetail: itemInfoType;
@@ -41,14 +42,12 @@ const SingleItem: FC<SingleItemProps> = ({ itemDetail }: SingleItemProps) => {
       <td className="px-4 py-2 text-left">{dimension.value}</td>
     </tr>
   );
-
   const renderCompositionRow = (composition, index) => (
     <tr key={index}>
       <td className="px-4 py-2 text-left">{composition.material_code}</td>
       <td className="px-4 py-2 text-left">{composition.percentage}%</td>
     </tr>
   );
-
   const renderSpecificationRow = (specification, index) => (
     <tr key={index}>
       <td className="px-4 py-2 text-left">{specification.sequence}</td>
@@ -70,18 +69,8 @@ const SingleItem: FC<SingleItemProps> = ({ itemDetail }: SingleItemProps) => {
 
       <div className=" flex rounded-md flex-col h-full flex-grow">
         <div className="flex items-center justify-between w-full bg-slate-100 rounded-md p-2 mb-4 h-full">
-          <div className="grid grid-cols-3 gap-2 w-2/3 h-full ">
-            {itemInfo && itemInfo.item
-              ? Object.entries(itemInfo.item)
-                  .filter(([key]) => key !== "image_url") // Exclude the image_url key
-                  .map(([key, value]) => (
-                    <div key={key} className="flex px-4">
-                      <p className="font-thin">{key}:</p>
-                      <p className="font-medium pl-2">{value}</p>
-                    </div>
-                  ))
-              : "No info"}
-          </div>
+          <SingleItemForm itemInfo={itemInfo} />
+
           <div className=" w-1/3 flex justify-center">
             <div className="flex h-full items-center justify-center">
               {item.image_url ? (
