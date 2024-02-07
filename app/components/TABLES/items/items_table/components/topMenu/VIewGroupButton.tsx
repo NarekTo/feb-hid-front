@@ -9,9 +9,7 @@ interface ViewGroupButtonProps {
 export const ViewGroupButton: FC<ViewGroupButtonProps> = ({
   onclick,
   toggle,
-  row,
 }) => {
-  console.log("BUTTON", toggle);
   return (
     <button
       className={`${

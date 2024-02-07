@@ -87,7 +87,6 @@ export const customCellRenderer = ({
   row: { index, original },
   column: { id },
   table,
-  setTableData,
   cellRef,
   cellRefs,
 }: CustomCellRendererProps) => {

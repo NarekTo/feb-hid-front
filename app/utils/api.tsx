@@ -30,7 +30,10 @@ export const addRow = async (
 };
 
 // FETCH IMAGE
-export const fetchItemImage = async (itemId: ProjectItemImages, session: Session | null) => {
+export const fetchItemImage = async (
+  itemId: ProjectItemImages,
+  session: Session | null
+) => {
   if (!session) {
     console.error("Session not available");
     return;
@@ -215,8 +218,9 @@ export const updateItemsDetails = async (
 };
 
 
+
 //----------------------------------- IMAGES FETCHING
-// CREATE Image
+
 export const createImage = async (
   type: string,
   itemId: string, 
@@ -244,8 +248,75 @@ export const createImage = async (
 };
 
 // READ Image
-
 export const fetchImage = async (itemId: string, imageSequence: number) => {
     const imageUrl = `https://hidpictures2024.blob.core.windows.net/pictures-31-enero-2024/item-${itemId.trim()}-image-${imageSequence}.jpg`;
   return imageUrl;
+
+//----------------------------------- CURRENCY FETCHING
+export const postNewCurrency = async (
+  newCurrencyData: Record<string, unknown>,
+  session: Session | null
+): Promise<boolean> => {
+  if (!session) {
+    console.error("Session not available");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3000/currencies`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify(newCurrencyData),
+    });
+
+    if (response.ok) {
+      console.log("New currency added successfully");
+      const addedCurrency = await response.json(); // Get the added currency from the response
+      return addedCurrency;
+    } else {
+      console.error("Failed to add new currency");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error adding new currency:", error);
+    return false;
+  }
+};
+
+export const deleteCurrency = async (
+  currencyCode: string,
+  session: Session | null
+): Promise<boolean> => {
+  if (!session) {
+    console.error("Session not available");
+    return false;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/currencies/${currencyCode}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+      }
+    );
+
+    if (response.ok) {
+      console.log("Currency deleted successfully");
+      return true;
+    } else {
+      console.error("Failed to delete currency");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error deleting currency:", error);
+    return false;
+  }
+
 };
