@@ -31,8 +31,16 @@ import {
   up,
   useSkipper,
 } from "./functions/items_table_fns";
+import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
+
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { ProjectItems, Session, ProjectItemImages } from "../../../../types";
+import {
+  ProjectItems,
+  Session,
+  ProjectItemImages,
+  ManufacturerInfo,
+  RowData,
+} from "../../../../types";
 import { ContextMenu } from "./components/topMenu/ContextMenu";
 import { fuzzyFilter } from "./components/Filter";
 import { Filter } from "./components/Filter";
@@ -46,10 +54,6 @@ import { AddButton } from "./components/topMenu/AddButton";
 import HideCheckBox from "./components/HideCheckBox";
 import Modal from "../../../UI_SECTIONS/page/Modal";
 import {
-  createImage,
-  fetchImage,
-  updateImage,
-  deleteImage,
   addRow,
   changeRowStatus,
   fetchItemDetails,
@@ -66,6 +70,10 @@ import MarkModal from "./components/ModalMark";
 import { PasteButton } from "./components/topMenu/PasteButton";
 import * as XLSX from "xlsx";
 import { ViewGroupButton } from "./components/topMenu/VIewGroupButton";
+import EvaluateCostsModal from "./components/evaluateModal";
+import SpecDocument from "../../../PDF/ITEMS/ViewSpecs";
+import { mockRowData } from "../../../../utils/mock";
+import PdfViewerComponent from "../../../PDF/ITEMS/pdfViewer";
 //------------------------------------interfaces
 export interface ItemsTableProps<T> {
   data: T[];
@@ -99,7 +107,7 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [openingMenu, setOpeningMenu] = useState(false);
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
   const [clicked, setClicked] = useState(false);
-
+  const [pdfDoc, setPdfDoc] = useState(null);
   const [selectedColumn, setSelectedColumn] = useState(null);
   const [points, setPoints] = useState({
     x: 0,
@@ -117,6 +125,15 @@ export const ItemsTable = React.memo(function ItemsTable({
   const [markedRow, setMarkedRow] = useState(null);
   const isAnyRowSelected = Object.values(rowSelection).some((value) => value);
   const [groupViewActive, setGroupViewActive] = useState(true);
+  const [evaluateModalOpen, setEvaluateModalOpen] = useState(false);
+  const [evaluateCostsData, setEvaluateCostsData] = useState({
+    currency: "SAR",
+    itemsCount: 0,
+    budget: 0,
+    actual: 0,
+    clientOffer: 0,
+    variance: 0,
+  });
   const tableRef = useRef(null);
   const virtualRef = useRef(null);
   const job_id = searchParams.get("job_id") as string;
@@ -1271,24 +1288,6 @@ export const ItemsTable = React.memo(function ItemsTable({
 
     if (!canUpdateAll) {
       handleMerge(marked, checkboxOptions, selectedRows);
-      /*
-      if (marked) {
-        // Replace with your actual condition
-
-        // Show the modal with the success message
-        setShowModal(true);
-        setModalConfig({
-          text: `Items successfully pasted from row ${
-            markedRow.Item_id
-          } to row(s) ${selectedRows.map((row) => row.Item_id).join(", ")}.`,
-          button1Text: "OK",
-          button1Action: () => setShowModal(false), // Close the modal when "OK" is clicked
-          button2Text: "",
-          button2Action: () => {},
-        });
-        setRowSelection({});
-      }
-      */
     } else {
       console.error(
         "Update can only be performed on items with status codes IB, ID, IDR, IXH"
@@ -1391,6 +1390,54 @@ export const ItemsTable = React.memo(function ItemsTable({
       }
       return newGroupViewActive;
     });
+  };
+
+  const evaluateCosts = async () => {
+    console.log("currency", tableData[0]?.actual_currency);
+    const itemsCount = tableData.length;
+    console.log("itemsCount", itemsCount);
+    // Calculate the sums of the relevant columns
+    const totalActual = tableData.reduce((sum, row) => {
+      const actualValue = Number(row.actual_value);
+      return sum + (isNaN(actualValue) ? 0 : actualValue);
+    }, 0);
+
+    const totalBudget = tableData.reduce((sum, row) => {
+      const budgetValue = Number(row.budget_value);
+      return sum + (isNaN(budgetValue) ? 0 : budgetValue);
+    }, 0);
+
+    const totalClientOffer = tableData.reduce((sum, row) => {
+      const clientValue = Number(row.client_value);
+      return sum + (isNaN(clientValue) ? 0 : clientValue);
+    }, 0);
+    const currency = tableData[0]?.actual_currency || "";
+
+    // Calculate variance as an example (this will depend on your specific logic)
+    const variance = totalActual - totalBudget;
+    const evaluateCostsData = {
+      currency,
+      itemsCount,
+      budget: totalBudget,
+      actual: totalActual,
+      clientOffer: totalClientOffer,
+      variance,
+    };
+    const fakeEvaluateCostsData = {
+      currency: "USD", // Use a mock currency
+      itemsCount: 10, // Mock number of items
+      budget: 5000.0, // Mock budget value
+      actual: 4500.0, // Mock actual value
+      clientOffer: 4700.0, // Mock client offer value
+      variance: 500.0, // Mock variance value
+    };
+    openEvaluateCostsModal(evaluateCostsData);
+  };
+
+  // Function to open the modal and set the data
+  const openEvaluateCostsModal = (data) => {
+    setEvaluateCostsData(data); // Assuming 'data' is an object with all the necessary info
+    setEvaluateModalOpen(true); // Corrected to use setShowModal instead of setIsModalOpen
   };
 
   //----------------------------------USE EFFECTS AND SOCKETS
@@ -1540,6 +1587,12 @@ export const ItemsTable = React.memo(function ItemsTable({
   }, [selectedCell]);
 
   //------------------------------------MARK AND PASTE FUNCTIONS
+
+  const viewSpecs = () => {
+    console.log("view specs");
+    setPdfDoc(true); // This should trigger a re-render and show the PDFViewer
+  };
+
   return (
     <div ref={tableRef}>
       <Modal
@@ -1555,7 +1608,12 @@ export const ItemsTable = React.memo(function ItemsTable({
         setModal={setShowMarkModal}
         setMarked={setMarkedRow}
       />
-
+      <EvaluateCostsModal
+        isOpen={evaluateModalOpen}
+        data={evaluateCostsData}
+        onClose={() => setEvaluateModalOpen(false)}
+      />
+      {pdfDoc && <PdfViewerComponent />}
       {clicked && (
         <ContextMenu
           top={points.y}
@@ -1594,6 +1652,11 @@ export const ItemsTable = React.memo(function ItemsTable({
             description="Export Excel"
             onClick={() => exportToExcel(tableData)}
           />
+          <TopMenuButton
+            description="Evaluate"
+            onClick={() => evaluateCosts()}
+          />
+          <TopMenuButton description="View Specs" onClick={() => viewSpecs()} />
         </div>
         {openingMenu && (
           <div className="flex w-full p-2 text-xs shadow-lg mt-8 rounded-md bg-slate-100">
