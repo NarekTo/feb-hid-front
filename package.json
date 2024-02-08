@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
+<<<<<<< HEAD
     "@prisma/client": "^5.9.1",
+=======
+    "@prisma/client": "^5.0.0",
+>>>>>>> ca3358198a134c25217f820d08b74b845547e9eb
     "@react-pdf/renderer": "^3.3.5",
     "@tanstack/match-sorter-utils": "^8.8.4",
     "@tanstack/react-table": "^8.10.7",
